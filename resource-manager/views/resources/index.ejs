@@ -1,0 +1,161 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/navbar') %>
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Resources</h3>
+    <a class="btn btn-primary" href="/resources/new">Add Resource</a>
+  </div>
+  <%- include('../partials/messages') %>
+  <% const purposeOptions = ['Study','Video Editing','Reference','Practice','Other']; %>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <form class="row gy-2 gx-3 align-items-end" action="/resources" method="GET">
+        <div class="col-md-3">
+          <label class="form-label">Domain</label>
+          <select class="form-select" name="domain">
+            <option value="all" <%= filters.domain === 'all' ? 'selected' : '' %>>
+              All
+            </option>
+            <% domains.forEach((d) => { %>
+            <option value="<%= d.id %>" <%= filters.domain == d.id ? 'selected' : '' %>>
+              <%= d.name %>
+            </option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Type</label>
+          <select class="form-select" name="type">
+            <option value="all" <%= filters.type === 'all' ? 'selected' : '' %>>
+              Both
+            </option>
+            <option value="FILE" <%= filters.type === 'FILE' ? 'selected' : '' %>>
+              File
+            </option>
+            <option value="LINK" <%= filters.type === 'LINK' ? 'selected' : '' %>>
+              Link
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Purpose</label>
+          <select class="form-select" name="purpose">
+            <option value="all" <%= filters.purpose === 'all' ? 'selected' : '' %>>
+              All
+            </option>
+            <% purposeOptions.forEach((p) => { %>
+            <option value="<%= p %>" <%= filters.purpose === p ? 'selected' : '' %>>
+              <%= p %>
+            </option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Search</label>
+          <input
+            type="text"
+            name="q"
+            class="form-control"
+            placeholder="Title or description"
+            value="<%= filters.q %>"
+          />
+        </div>
+        <div class="col-md-2">
+          <div class="form-check mt-4">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              name="favorite"
+              value="1"
+              <%= filters.favorite === '1' ? 'checked' : '' %>
+            />
+            <label class="form-check-label">Favorites only</label>
+          </div>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-secondary me-2">Apply</button>
+          <a class="btn btn-link" href="/resources">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <% if (resources.length) { %>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Domain</th>
+              <th>Purpose</th>
+              <th>Type</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% resources.forEach((res) => { %>
+            <tr>
+              <td>
+                <strong><%= res.title %></strong>
+                <p class="mb-0 small text-muted"><%= res.description || '' %></p>
+              </td>
+              <td><%= res.domain_name || 'Uncategorized' %></td>
+              <td><%= res.purpose || '-' %></td>
+              <td>
+                <span class="badge <%= res.type === 'FILE' ? 'bg-info text-dark' : 'bg-success' %>">
+                  <%= res.type %>
+                </span>
+              </td>
+              <td class="text-end">
+                <% if (res.type === 'FILE' && res.file_path) { %>
+                <a
+                  class="btn btn-sm btn-outline-secondary"
+                  href="/uploads/<%= res.file_path %>"
+                  target="_blank"
+                  >Download</a
+                >
+                <% } %>
+                <% if (res.type === 'LINK' && res.url) { %>
+                <a
+                  class="btn btn-sm btn-outline-secondary"
+                  href="<%= res.url %>"
+                  target="_blank"
+                  >Visit</a
+                >
+                <% } %>
+                <a class="btn btn-sm btn-outline-primary" href="/resources/<%= res.id %>/edit"
+                  >Edit</a
+                >
+                <form
+                  action="/resources/<%= res.id %>/favorite"
+                  method="POST"
+                  class="d-inline"
+                >
+                  <button class="btn btn-sm <%= res.is_favorite ? 'btn-warning' : 'btn-outline-warning' %>">
+                    <%= res.is_favorite ? '★' : '☆' %>
+                  </button>
+                </form>
+                <form
+                  action="/resources/<%= res.id %>/delete"
+                  method="POST"
+                  class="d-inline"
+                  onsubmit="return confirm('Delete this resource?')"
+                >
+                  <button class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } else { %>
+      <p class="text-muted mb-0">No resources found. Try adjusting filters.</p>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>
+

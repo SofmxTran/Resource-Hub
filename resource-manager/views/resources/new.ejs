@@ -1,0 +1,89 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/navbar') %>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h4 class="mb-3">Add Resource</h4>
+          <%- include('../partials/messages') %>
+          <form action="/resources" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label class="form-label">Title</label>
+              <input type="text" class="form-control" name="title" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea
+                name="description"
+                class="form-control"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Domain</label>
+                <select name="domainId" class="form-select">
+                  <option value="">Uncategorized</option>
+                  <% domains.forEach((d) => { %>
+                  <option value="<%= d.id %>"><%= d.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Purpose</label>
+                <% const purposeOptions = ['Study','Video Editing','Reference','Practice','Other']; %>
+                <select name="purpose" class="form-select">
+                  <option value="">Select</option>
+                  <% purposeOptions.forEach((p) => { %>
+                  <option value="<%= p %>"><%= p %></option>
+                  <% }) %>
+                </select>
+              </div>
+            </div>
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
+                <label class="form-label">Type</label>
+                <select
+                  name="type"
+                  class="form-select"
+                  id="resourceType"
+                  required
+                >
+                  <option value="FILE">File</option>
+                  <option value="LINK">Link</option>
+                </select>
+              </div>
+              <div class="col-md-6 file-field">
+                <label class="form-label">Upload File</label>
+                <input class="form-control" type="file" name="fileUpload" />
+              </div>
+            </div>
+            <div class="mt-3 link-field d-none">
+              <label class="form-label">URL</label>
+              <input type="url" class="form-control" name="url" />
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+              <a href="/resources" class="btn btn-outline-secondary">Cancel</a>
+              <button class="btn btn-primary">Save Resource</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const typeSelect = document.getElementById('resourceType');
+  const fileField = document.querySelector('.file-field');
+  const linkField = document.querySelector('.link-field');
+  const toggleFields = () => {
+    const isFile = typeSelect.value === 'FILE';
+    fileField.classList.toggle('d-none', !isFile);
+    linkField.classList.toggle('d-none', isFile);
+  };
+  typeSelect.addEventListener('change', toggleFields);
+  toggleFields();
+</script>
+<%- include('../partials/footer') %>
+

@@ -1,0 +1,21 @@
+body {
+  min-height: 100vh;
+}
+
+.card {
+  border-radius: 1rem;
+}
+
+.navbar-brand {
+  letter-spacing: 0.5px;
+}
+
+table td,
+table th {
+  vertical-align: middle;
+}
+
+.list-group-item-action:hover {
+  background-color: #f8f9fa;
+}
+

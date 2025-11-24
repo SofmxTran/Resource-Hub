@@ -1,0 +1,33 @@
+<%- include('partials/head', { title }) %>
+<%- include('partials/navbar') %>
+<div class="container py-5">
+  <div class="row align-items-center">
+    <div class="col-md-7">
+      <h1 class="display-5 fw-bold mb-3">My Resource Hub</h1>
+      <p class="lead">
+        Keep all your study files, helpful links, and creative assets neatly
+        organized in one place. Tag them by domain, search quickly, and mark
+        your favourites for instant access.
+      </p>
+      <div class="d-flex gap-3 mt-4">
+        <a href="/register" class="btn btn-primary btn-lg">Get Started</a>
+        <a href="/login" class="btn btn-outline-secondary btn-lg">Sign In</a>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="card shadow border-0">
+        <div class="card-body">
+          <h5 class="card-title">App Highlights</h5>
+          <ul class="list-unstyled mb-0 small">
+            <li>✓ Upload PDFs, PPTs, DOCX, and more</li>
+            <li>✓ Save YouTube videos and tutorial links</li>
+            <li>✓ Organize by domains like Programming or Design</li>
+            <li>✓ Powerful search, filters, and favorites</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>
+

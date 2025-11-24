@@ -1,0 +1,78 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/navbar') %>
+<div class="container py-4">
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h4 class="mb-3">All Domains</h4>
+          <%- include('../partials/messages') %>
+          <% if (domains.length) { %>
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Resources</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% domains.forEach((domain) => { %>
+                <tr>
+                  <td class="fw-semibold"><%= domain.name %></td>
+                  <td><%= domain.description || '-' %></td>
+                  <td><span class="badge bg-light text-dark"><%= domain.resourceCount %></span></td>
+                  <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" href="/domains/<%= domain.id %>/edit">Edit</a>
+                    <form
+                      action="/domains/<%= domain.id %>/delete"
+                      method="POST"
+                      class="d-inline"
+                    >
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        onclick="return confirm('Delete this domain?')"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% } else { %>
+          <p class="text-muted mb-0">No domains yet.</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="mb-3">Add Domain</h5>
+          <form method="POST" action="/domains">
+            <div class="mb-3">
+              <label class="form-label">Name</label>
+              <input type="text" name="name" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea
+                name="description"
+                rows="3"
+                class="form-control"
+              ></textarea>
+            </div>
+            <button class="btn btn-primary w-100">Save Domain</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>
+

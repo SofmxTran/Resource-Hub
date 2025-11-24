@@ -1,0 +1,28 @@
+{
+  "name": "resource-manager",
+  "version": "1.0.0",
+  "description": "Personal Resource Manager web app for coursework",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "seed": "node scripts/seed.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [],
+  "author": "Resource Manager",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.4.6",
+    "dotenv": "^17.2.3",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "@ljharb/tsconfig": "^0.3.2",
+    "nodemon": "^3.1.11"
+  }
+}
