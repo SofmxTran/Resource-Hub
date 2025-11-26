@@ -7,6 +7,10 @@ Render free plan không có persistent disk, nên database và uploads sẽ bị
 - **Render Free Plan**: Không có persistent disk, database sẽ bị mất khi service restart/redeploy
 - **Giải pháp**: Sử dụng Render PostgreSQL (free tier) hoặc backup/restore database mỗi lần deploy
 
+## ⭐ Giải pháp được khuyến nghị: Backup/Restore tự động
+
+**Xem phần "Giải pháp 2" bên dưới** để biết hướng dẫn chi tiết. Đây là cách đơn giản nhất và đã được cấu hình sẵn trong project.
+
 ---
 
 ## Giải pháp 1: Sử dụng Render PostgreSQL (KHUYẾN NGHỊ)
@@ -36,9 +40,9 @@ Render cung cấp PostgreSQL free tier, đây là giải pháp tốt nhất cho 
 
 ---
 
-## Giải pháp 2: Backup/Restore Database mỗi lần Deploy (Đơn giản nhất)
+## Giải pháp 2: Backup/Restore Database mỗi lần Deploy (Đơn giản nhất) ⭐ KHUYẾN NGHỊ
 
-Với giải pháp này, bạn sẽ backup database trước khi deploy và restore sau khi deploy.
+Với giải pháp này, bạn sẽ backup database trước khi deploy và script sẽ tự động restore khi deploy.
 
 ### Bước 1: Backup Database trước khi Deploy
 
@@ -97,64 +101,18 @@ Trong Render Dashboard, vào **Environment** tab và thêm:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### Bước 5: Tạo Script Auto-Restore Database
+### Bước 5: Script Auto-Restore đã sẵn sàng ✅
 
-Tạo script để tự động restore database khi deploy:
+Script `scripts/init-db.js` đã được tạo sẵn và sẽ tự động:
+- Tìm file backup mới nhất trong thư mục `backups/`
+- Restore database khi deploy (nếu database chưa tồn tại)
+- Chạy tự động khi `npm install` và `npm start`
 
-**File: `scripts/init-db.js`**
-```javascript
-const fs = require('fs');
-const path = require('path');
-
-// Tìm file backup mới nhất
-const backupsDir = path.join(__dirname, '..', 'backups');
-if (!fs.existsSync(backupsDir)) {
-  console.log('No backups directory found');
-  process.exit(0);
-}
-
-const backupFiles = fs.readdirSync(backupsDir)
-  .filter(f => f.endsWith('.db'))
-  .map(f => ({
-    name: f,
-    path: path.join(backupsDir, f),
-    time: fs.statSync(path.join(backupsDir, f)).mtime
-  }))
-  .sort((a, b) => b.time - a.time);
-
-if (backupFiles.length === 0) {
-  console.log('No backup files found');
-  process.exit(0);
-}
-
-const latestBackup = backupFiles[0];
-const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '..', 'db', 'resource-manager.db');
-const dbDir = path.dirname(dbPath);
-
-// Tạo thư mục db nếu chưa có
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
-}
-
-// Chỉ restore nếu database chưa tồn tại
-if (!fs.existsSync(dbPath)) {
-  console.log(`Restoring database from ${latestBackup.name}...`);
-  fs.copyFileSync(latestBackup.path, dbPath);
-  console.log('✅ Database restored successfully!');
-} else {
-  console.log('Database already exists, skipping restore.');
-}
-```
-
-Cập nhật `package.json`:
-```json
-"scripts": {
-  "postinstall": "node scripts/init-db.js",
-  "start": "node scripts/init-db.js && node server.js"
-}
-```
+**Không cần làm gì thêm**, script đã được cấu hình trong `package.json`.
 
 ### Bước 6: Deploy và Kiểm tra
+
+**Lưu ý**: Script sẽ tự động restore database từ backup file trong repo khi deploy.
 
 1. Click **"Manual Deploy"** → **"Deploy latest commit"**
 2. Đợi build và deploy hoàn tất
@@ -194,30 +152,92 @@ Tương tự như database, upload files lên external storage.
 
 ---
 
-## Workflow đề xuất cho Render Free Plan
+## Workflow đề xuất cho Render Free Plan (Cách 1)
 
-### Mỗi lần cần deploy:
+   ### Lần đầu deploy:
 
-1. **Backup database:**
+1. **Backup database từ local:**
    ```bash
    npm run backup-db
    ```
+   File backup sẽ được lưu trong `backups/resource-manager-[timestamp].db`
 
-2. **Commit backup vào git (tạm thời):**
+2. **Commit backup vào git:**
    ```bash
    git add backups/resource-manager-*.db
    git commit -m "Add database backup for deployment"
    git push origin main
    ```
+   ⚠️ **Lưu ý**: Chỉ commit backup nếu database nhỏ (< 10MB). Nếu database lớn, cân nhắc dùng cách khác.
 
-3. **Deploy trên Render** (sẽ tự động restore database)
+3. **Deploy trên Render:**
+   - Render sẽ tự động chạy `npm install` (sẽ chạy `postinstall` → `init-db.js`)
+   - Sau đó chạy `npm start` (sẽ chạy `init-db.js` → `server.js`)
+   - Script sẽ tự động restore database từ backup file trong repo
 
-4. **Sau khi deploy thành công, xóa backup khỏi git:**
+4. **Kiểm tra logs trên Render:**
+   - Vào **Logs** tab trong Render Dashboard
+   - Tìm dòng: `✅ Database restored successfully!`
+   - Đảm bảo không có lỗi
+
+---
+
+### Mỗi lần cần redeploy (cập nhật code):
+
+#### Tình huống A: Bạn đang làm việc local và có database local
+
+1. **Backup database từ local:**
    ```bash
-   git rm backups/resource-manager-*.db
-   git commit -m "Remove database backup"
+   npm run backup-db
+   ```
+
+2. **Commit backup mới:**
+   ```bash
+   git add backups/resource-manager-*.db
+   git commit -m "Update database backup"
    git push origin main
    ```
+
+3. **Redeploy** - database sẽ được restore từ backup mới
+
+#### Tình huống B: Bạn muốn giữ nguyên database trên Render (không có thay đổi local)
+
+1. **Backup database từ Render hiện tại:**
+   
+   **Cách 1: Dùng Render Shell (Khuyến nghị)**
+   - Vào Render Dashboard → Service → **Shell**
+   - Chạy:
+     ```bash
+     cd /opt/render/project/src
+     npm run backup-db
+     ```
+   - File backup sẽ được tạo trong `/opt/render/project/src/backups/`
+   - **Vấn đề**: Bạn không thể download trực tiếp từ Shell
+   - **Giải pháp**: Dùng cách 2 (tạo endpoint tạm thời)
+
+   **Cách 2: Tạo endpoint download tạm thời**
+   - Thêm route vào `server.js` (xem chi tiết trong `QUICK-DEPLOY.md`)
+   - Deploy code này
+   - Download database qua browser: `https://your-app.onrender.com/admin/download-db`
+   - **⚠️ QUAN TRỌNG: Xóa route này ngay sau khi download!**
+   - Đổi tên file và đặt vào `backups/`
+   - Commit và push
+
+2. **Redeploy** - database sẽ được restore từ backup
+
+#### Tình huống C: Database đã có trong repo (từ lần deploy trước)
+
+- **Chỉ cần redeploy** - script sẽ tự động restore từ backup file có sẵn trong repo
+- Không cần backup lại nếu không có thay đổi database
+
+---
+
+### ⚠️ Lưu ý quan trọng:
+
+1. **Database trên Render sẽ bị mất khi redeploy** - luôn backup trước
+2. **Nếu xóa backup khỏi git**, lần deploy sau sẽ không có database
+3. **Chỉ commit backup nếu database nhỏ** (< 10MB)
+4. **Luôn kiểm tra logs** để đảm bảo database đã được restore
 
 ### Hoặc sử dụng GitHub Actions để tự động:
 

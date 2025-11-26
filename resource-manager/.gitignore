@@ -3,6 +3,7 @@
 uploads
 *.db
 package-lock.json
-backups/*.db
+# Allow backup files to be committed temporarily for deployment
+# backups/*.db
 !backups/.gitkeep
 

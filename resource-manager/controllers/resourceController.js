@@ -53,15 +53,16 @@ function listResources(req, res) {
     type: (req.query.type || '').toUpperCase() || 'all',
     purpose: req.query.purpose || 'all',
     favorite: req.query.favorite || '0',
-    status: req.query.status || 'all',
+    status: req.query.status || 'ALL',
     q: req.query.q || '',
   };
   if (!['FILE', 'LINK'].includes(filters.type)) {
     filters.type = 'all';
   }
-  filters.status = (filters.status || 'all').toUpperCase();
-  if (!['PENDING', 'APPROVED', 'REJECTED'].includes(filters.status)) {
-    filters.status = 'all';
+  // Normalize status: 'ALL' means show all, otherwise must be valid status
+  filters.status = (filters.status || 'ALL').toUpperCase();
+  if (!['PENDING', 'APPROVED', 'REJECTED', 'ALL'].includes(filters.status)) {
+    filters.status = 'ALL';
   }
 
   const resources = resourceModel.getAllResources(req.session.user.id, filters);
