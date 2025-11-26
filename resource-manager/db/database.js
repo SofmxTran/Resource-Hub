@@ -131,6 +131,21 @@ function ensureVotesTable() {
   `);
 }
 
+function ensureProfileFields() {
+  if (!columnExists('users', 'display_name')) {
+    db.exec(`ALTER TABLE users ADD COLUMN display_name TEXT`);
+  }
+  if (!columnExists('users', 'avatar_path')) {
+    db.exec(`ALTER TABLE users ADD COLUMN avatar_path TEXT`);
+  }
+  if (!columnExists('users', 'bio')) {
+    db.exec(`ALTER TABLE users ADD COLUMN bio TEXT`);
+  }
+  if (!columnExists('users', 'website')) {
+    db.exec(`ALTER TABLE users ADD COLUMN website TEXT`);
+  }
+}
+
 const init = () => {
   const schema = `
     CREATE TABLE IF NOT EXISTS users (
@@ -179,6 +194,7 @@ const init = () => {
   ensureResourceEnhancements();
   ensureCommentsTable();
   ensureVotesTable();
+  ensureProfileFields();
 };
 
 init();

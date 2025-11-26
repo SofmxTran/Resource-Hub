@@ -1,9 +1,14 @@
 ﻿<%- include('partials/head', { title }) %>
 <%- include('partials/navbar') %>
 <div class="container text-center py-5">
-  <h1 class="display-4">404</h1>
-  <p class="lead mb-4">Oops! The page you're looking for was not found.</p>
-  <a class="btn btn-primary" href="/">Go Home</a>
+  <div data-aos="zoom-in">
+    <i class="fas fa-exclamation-triangle fa-5x text-warning mb-4"></i>
+    <h1 class="display-4 mb-3">404</h1>
+    <p class="lead mb-4 text-muted">Oops! The page you're looking for was not found.</p>
+    <a class="btn btn-primary btn-lg" href="/">
+      <i class="fas fa-home me-2"></i>Go Home
+    </a>
+  </div>
 </div>
 <%- include('partials/footer') %>
 

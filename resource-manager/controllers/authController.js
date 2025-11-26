@@ -2,7 +2,10 @@
 const userModel = require('../models/userModel');
 
 function renderRegister(req, res) {
-  res.render('auth/register', { title: 'Create Account' });
+  res.render('auth/register', { 
+    title: 'Create Account',
+    activeNav: null,
+  });
 }
 
 function sanitizeUsername(username) {
@@ -56,7 +59,10 @@ async function register(req, res) {
 }
 
 function renderLogin(req, res) {
-  res.render('auth/login', { title: 'Login' });
+  res.render('auth/login', { 
+    title: 'Login',
+    activeNav: null,
+  });
 }
 
 async function login(req, res) {

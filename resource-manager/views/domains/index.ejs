@@ -1,11 +1,13 @@
 ﻿<%- include('../partials/head', { title }) %>
 <%- include('../partials/navbar') %>
-<div class="container py-4">
+<div class="container py-5">
   <div class="row g-4">
-    <div class="col-lg-7">
-      <div class="card shadow-sm border-0">
+    <div class="col-lg-7" data-aos="fade-up">
+      <div class="card">
         <div class="card-body">
-          <h4 class="mb-3">All Domains</h4>
+          <h4 class="mb-3">
+            <i class="fas fa-tags me-2 text-primary"></i>All Domains
+          </h4>
           <%- include('../partials/messages') %>
           <% if (domains.length) { %>
           <div class="table-responsive">
@@ -21,21 +23,26 @@
               <tbody>
                 <% domains.forEach((domain) => { %>
                 <tr>
-                  <td class="fw-semibold"><%= domain.name %></td>
-                  <td><%= domain.description || '-' %></td>
-                  <td><span class="badge bg-light text-dark"><%= domain.resourceCount %></span></td>
+                  <td class="fw-semibold text-primary"><%= domain.name %></td>
+                  <td class="text-muted"><%= domain.description || '-' %></td>
+                  <td>
+                    <span class="badge bg-primary"><%= domain.resourceCount %></span>
+                  </td>
                   <td class="text-end">
-                    <a class="btn btn-sm btn-outline-primary" href="/domains/<%= domain.id %>/edit">Edit</a>
+                    <a class="btn btn-sm btn-outline-primary" href="/domains/<%= domain.id %>/edit">
+                      <i class="fas fa-edit me-1"></i>Edit
+                    </a>
                     <form
                       action="/domains/<%= domain.id %>/delete"
                       method="POST"
                       class="d-inline"
                     >
                       <button
+                        type="submit"
                         class="btn btn-sm btn-outline-danger"
                         onclick="return confirm('Delete this domain?')"
                       >
-                        Delete
+                        <i class="fas fa-trash me-1"></i>Delete
                       </button>
                     </form>
                   </td>
@@ -45,29 +52,41 @@
             </table>
           </div>
           <% } else { %>
-          <p class="text-muted mb-0">No domains yet.</p>
+          <p class="text-muted mb-0 text-center py-4">
+            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+            No domains yet.
+          </p>
           <% } %>
         </div>
       </div>
     </div>
-    <div class="col-lg-5">
-      <div class="card shadow-sm border-0">
+    <div class="col-lg-5" data-aos="fade-up" data-aos-delay="100">
+      <div class="card">
         <div class="card-body">
-          <h5 class="mb-3">Add Domain</h5>
+          <h5 class="mb-3">
+            <i class="fas fa-plus-circle me-2 text-primary"></i>Add Domain
+          </h5>
           <form method="POST" action="/domains">
             <div class="mb-3">
-              <label class="form-label">Name</label>
-              <input type="text" name="name" class="form-control" required />
+              <label class="form-label">
+                <i class="fas fa-tag me-2"></i>Name
+              </label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. Design, Programming" required />
             </div>
             <div class="mb-3">
-              <label class="form-label">Description</label>
+              <label class="form-label">
+                <i class="fas fa-align-left me-2"></i>Description
+              </label>
               <textarea
                 name="description"
                 rows="3"
                 class="form-control"
+                placeholder="Brief description of this domain"
               ></textarea>
             </div>
-            <button class="btn btn-primary w-100">Save Domain</button>
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fas fa-save me-2"></i>Save Domain
+            </button>
           </form>
         </div>
       </div>

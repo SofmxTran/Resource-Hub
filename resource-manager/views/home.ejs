@@ -1,46 +1,83 @@
 ﻿<%- include('partials/head', { title }) %>
 <%- include('partials/navbar') %>
-<div class="container py-5">
-  <% if (currentUser) { %>
-  <div class="alert alert-primary d-flex justify-content-between align-items-center">
-    <div>
-      You are logged in as <strong>@<%= currentUser.username %></strong>.
-    </div>
-    <a href="/dashboard" class="btn btn-sm btn-outline-primary bg-white">Go to dashboard</a>
-  </div>
-  <% } %>
 
-  <div class="row g-4 align-items-center mb-5">
-    <div class="col-lg-7">
-      <h1 class="display-5 fw-bold mb-3">My Resource Hub</h1>
-      <p class="lead text-muted">
-        Discover and share study files, helpful links, and creative assets with the community.
-        Mark resources as public to inspire others or keep them private for your own vault.
-      </p>
-      <% if (!currentUser) { %>
-      <div class="d-flex flex-wrap gap-3 mt-4">
-        <a href="/register" class="btn btn-primary btn-lg">Create free account</a>
-        <a href="/login" class="btn btn-outline-secondary btn-lg">Sign in</a>
-      </div>
-      <% } %>
+<% if (currentUser) { %>
+<div class="container py-3">
+  <div class="alert alert-primary d-flex justify-content-between align-items-center" data-aos="fade-down">
+    <div>
+      <i class="fas fa-user-circle me-2"></i>You are logged in as <strong>@<%= currentUser.username %></strong>.
     </div>
-    <div class="col-lg-5">
-      <div class="card hero-card border-0 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title text-uppercase text-muted">Why students use it</h5>
-          <ul class="list-unstyled mb-0 small">
-            <li>• Keep subject domains organized</li>
-            <li>• Upload files or drop your favourite URLs</li>
-            <li>• Set resources public or private per item</li>
-            <li>• Filters make it easy to find what you need fast</li>
-          </ul>
+    <a href="/dashboard" class="btn btn-sm btn-outline-primary">Go to dashboard</a>
+  </div>
+</div>
+<% } %>
+
+<!-- Hero Section -->
+<div class="hero-section" data-aos="fade-up">
+  <div class="container">
+    <h1 class="hero-title animate__animated animate__fadeInUp">WebHub</h1>
+    <p class="hero-subtitle animate__animated animate__fadeInUp">
+      Your Neon Knowledge Vault – Discover and share study files, helpful links, and creative assets with the community.
+      Mark resources as public to inspire others or keep them private for your own vault.
+    </p>
+    <% if (!currentUser) { %>
+    <div class="hero-cta animate__animated animate__fadeInUp">
+      <a href="/register" class="btn btn-primary btn-lg">
+        <i class="fas fa-rocket me-2"></i>Create Free Account
+      </a>
+      <a href="/login" class="btn btn-outline-primary btn-lg">
+        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+      </a>
+    </div>
+    <% } else { %>
+    <div class="hero-cta animate__animated animate__fadeInUp">
+      <a href="/resources/new" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus me-2"></i>Add New Resource
+      </a>
+      <a href="/resources" class="btn btn-outline-primary btn-lg">
+        <i class="fas fa-folder me-2"></i>Browse My Resources
+      </a>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-4 mb-5" data-aos="fade-up" data-aos-delay="100">
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-folder-open fa-3x text-primary mb-3"></i>
+          <h5 class="card-title">Organized Domains</h5>
+          <p class="card-text">Keep subject domains organized and easily accessible.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-upload fa-3x text-accent mb-3"></i>
+          <h5 class="card-title">Files & Links</h5>
+          <p class="card-text">Upload files or drop your favourite URLs in one place.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-filter fa-3x text-primary mb-3"></i>
+          <h5 class="card-title">Smart Filters</h5>
+          <p class="card-text">Filters make it easy to find what you need fast.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="card shadow-sm border-0 mb-4">
+  <div class="card mb-4" data-aos="fade-up" data-aos-delay="200">
     <div class="card-body">
+      <h5 class="card-title mb-4">
+        <i class="fas fa-search me-2"></i>Search Resources
+      </h5>
       <form class="row gy-2 gx-3 align-items-end" method="GET" action="/">
         <div class="col-md-3">
           <label class="form-label">Keyword</label>
@@ -93,74 +130,93 @@
             <% }) %>
           </select>
         </div>
-        <div class="col-md-2 text-end d-flex gap-2 justify-content-end">
-          <button class="btn btn-primary">Search</button>
-          <a href="/" class="btn btn-link">Reset</a>
+        <div class="col-md-1 text-end d-flex gap-2 justify-content-end">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i>
+          </button>
+          <a href="/" class="btn btn-outline-primary">
+            <i class="fas fa-redo"></i>
+          </a>
         </div>
       </form>
     </div>
   </div>
 
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 mb-0">Latest public resources</h2>
+  <div class="d-flex justify-content-between align-items-center mb-4" data-aos="fade-up" data-aos-delay="300">
+    <h2 class="h3 mb-0">
+      <i class="fas fa-fire me-2 text-primary"></i>Latest Public Resources
+    </h2>
     <% if (!currentUser) { %>
-    <a href="/register" class="text-decoration-none">Share yours →</a>
+    <a href="/register" class="text-primary text-decoration-none">
+      Share yours <i class="fas fa-arrow-right ms-1"></i>
+    </a>
     <% } %>
   </div>
 
   <% if (feed.length) { %>
   <div class="row g-4">
-    <% feed.forEach((resource) => { %>
-    <div class="col-md-6">
-      <div class="card resource-card h-100 shadow-sm border-0">
+    <% feed.forEach((resource, index) => { %>
+    <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="<%= (index % 3) * 100 %>">
+      <div class="card resource-card h-100">
         <% if (resource.image_path) { %>
         <img
           src="/uploads/<%= resource.image_path %>"
           class="card-img-top"
           alt="Thumbnail for <%= resource.title %>"
-          style="max-height: 220px; object-fit: cover;"
         />
         <% } %>
         <div class="card-body d-flex flex-column">
           <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
+            <div class="flex-grow-1">
               <h5 class="card-title mb-1"><%= resource.title %></h5>
               <small class="text-muted">
-                Posted by <%= resource.full_name %> (<a href="/u/<%= resource.username %>">@<%= resource.username %></a>)
-                • <%= new Date(resource.created_at).toLocaleDateString() %>
+                <div class="user-display mb-1">
+                  <% if (resource.avatar_path) { %>
+                  <img src="/uploads/avatars/<%= resource.avatar_path %>" alt="Avatar" class="avatar avatar-sm" />
+                  <% } else { %>
+                  <div class="avatar-placeholder avatar-placeholder-sm">
+                    <%= (resource.display_name || resource.full_name || resource.username).charAt(0).toUpperCase() %>
+                  </div>
+                  <% } %>
+                  <span>
+                    Posted by <strong class="text-primary"><%= resource.display_name || resource.full_name || resource.username %></strong>
+                    <a href="/u/<%= resource.username %>" class="text-muted">(@<%= resource.username %>)</a>
+                  </span>
+                </div>
+                <i class="fas fa-calendar me-1"></i><%= new Date(resource.created_at).toLocaleDateString() %>
               </small>
             </div>
-            <span class="badge <%= resource.type === 'FILE' ? 'bg-info text-dark' : 'bg-success' %>">
+            <span class="badge <%= resource.type === 'FILE' ? 'bg-info' : 'bg-success' %> ms-2">
               <%= resource.type %>
             </span>
           </div>
           <p class="card-text flex-grow-1"><%= resource.description || 'No description provided.' %></p>
-          <ul class="list-inline small text-muted mb-3">
-            <li class="list-inline-item">
-              Domain: <%= resource.domain_name || 'Uncategorized' %>
-            </li>
+          <div class="small text-muted mb-3">
+            <div class="mb-1">
+              <i class="fas fa-tag me-1"></i><strong>Domain:</strong> <%= resource.domain_name || 'Uncategorized' %>
+            </div>
             <% if (resource.purpose) { %>
-            <li class="list-inline-item">
-              • Purpose: <%= resource.purpose %>
-            </li>
+            <div class="mb-1">
+              <i class="fas fa-bullseye me-1"></i><strong>Purpose:</strong> <%= resource.purpose %>
+            </div>
             <% } %>
-            <li class="list-inline-item">
-              • Trust: <strong><%= resource.trust_score || 0 %></strong>
-            </li>
-          </ul>
+            <div>
+              <i class="fas fa-star me-1 text-warning"></i><strong>Trust Score:</strong> <span class="text-primary"><%= resource.trust_score || 0 %></span>
+            </div>
+          </div>
           <div class="mt-auto d-flex flex-wrap gap-2">
             <% if (resource.type === 'FILE' && resource.file_path) { %>
-            <a href="/uploads/<%= resource.file_path %>" target="_blank" class="btn btn-outline-secondary btn-sm">
-              Download file
+            <a href="/uploads/<%= resource.file_path %>" target="_blank" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-download me-1"></i>Download
             </a>
             <% } %>
             <% if (resource.type === 'LINK' && resource.url) { %>
-            <a href="<%= resource.url %>" target="_blank" class="btn btn-outline-secondary btn-sm">
-              Open link
+            <a href="<%= resource.url %>" target="_blank" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-external-link-alt me-1"></i>Open Link
             </a>
             <% } %>
             <a href="/resources/<%= resource.id %>" class="btn btn-primary btn-sm">
-              View details
+              <i class="fas fa-eye me-1"></i>View Details
             </a>
           </div>
         </div>
@@ -169,10 +225,16 @@
     <% }) %>
   </div>
   <% } else { %>
-  <div class="text-center py-5">
-    <p class="text-muted">No public resources match your filters yet. Try relaxing your search.</p>
+  <div class="text-center py-5" data-aos="fade-up">
+    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+    <p class="text-muted fs-5">No public resources match your filters yet. Try relaxing your search.</p>
   </div>
   <% } %>
 </div>
+
+<button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top">
+  <i class="fas fa-arrow-up"></i>
+</button>
+
 <%- include('partials/footer') %>
 

@@ -1,0 +1,118 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/navbar') %>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8" data-aos="zoom-in">
+      <div class="card">
+        <div class="card-body p-4">
+          <div class="text-center mb-4">
+            <i class="fas fa-user-cog fa-3x text-primary mb-3"></i>
+            <h3 class="mb-2">Profile Settings</h3>
+            <p class="text-muted small">Customize your public profile and account information</p>
+          </div>
+          <%- include('../partials/messages') %>
+          
+          <form method="POST" action="/settings/profile" enctype="multipart/form-data">
+            <!-- Avatar Section -->
+            <div class="text-center mb-4">
+              <div class="mb-3">
+                <% if (user.avatar_path) { %>
+                <img 
+                  src="/uploads/avatars/<%= user.avatar_path %>" 
+                  alt="Avatar" 
+                  class="rounded-circle"
+                  style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--primary); box-shadow: var(--shadow-glow);"
+                />
+                <% } else { %>
+                <div 
+                  class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold"
+                  style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary), var(--accent)); font-size: 2.5rem; border: 3px solid var(--primary); box-shadow: var(--shadow-glow);"
+                >
+                  <%= (user.display_name || user.full_name || user.username).charAt(0).toUpperCase() %>
+                </div>
+                <% } %>
+              </div>
+              <label class="form-label">
+                <i class="fas fa-image me-2"></i>Avatar Image
+              </label>
+              <input 
+                type="file" 
+                name="avatar" 
+                class="form-control" 
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+              />
+              <small class="text-muted d-block mt-2">
+                <i class="fas fa-info-circle me-1"></i>JPG, PNG, or WebP. Max 2MB. Square images work best.
+              </small>
+            </div>
+
+            <!-- Display Name -->
+            <div class="mb-3">
+              <label class="form-label">
+                <i class="fas fa-user-tag me-2"></i>Display Name
+              </label>
+              <input 
+                type="text" 
+                name="displayName" 
+                class="form-control" 
+                placeholder="Your public nickname"
+                value="<%= user.display_name || '' %>"
+                maxlength="50"
+              />
+              <small class="text-muted">
+                This name will be shown instead of your username. Leave empty to use your username.
+              </small>
+            </div>
+
+            <!-- Website -->
+            <div class="mb-3">
+              <label class="form-label">
+                <i class="fas fa-globe me-2"></i>Website
+              </label>
+              <input 
+                type="url" 
+                name="website" 
+                class="form-control" 
+                placeholder="https://yourwebsite.com"
+                value="<%= user.website || '' %>"
+                maxlength="200"
+              />
+              <small class="text-muted">
+                Your personal website, portfolio, or GitHub profile.
+              </small>
+            </div>
+
+            <!-- Bio -->
+            <div class="mb-4">
+              <label class="form-label">
+                <i class="fas fa-align-left me-2"></i>Bio
+              </label>
+              <textarea 
+                name="bio" 
+                class="form-control" 
+                rows="4"
+                placeholder="Tell us about yourself..."
+                maxlength="500"
+              ><%= user.bio || '' %></textarea>
+              <small class="text-muted">
+                A short description about yourself. Max 500 characters.
+              </small>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="d-flex justify-content-between">
+              <a href="/profile" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>
+

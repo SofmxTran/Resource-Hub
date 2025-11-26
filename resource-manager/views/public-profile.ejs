@@ -1,58 +1,152 @@
 <%- include('partials/head', { title }) %>
 <%- include('partials/navbar') %>
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <p class="text-uppercase text-muted small mb-1">Public profile</p>
-      <h2 class="mb-0"><%= profileUser.full_name %> (@<%= profileUser.username %>)</h2>
-      <p class="text-muted mb-0">Showing public resources only.</p>
+<div class="container py-5">
+  <!-- Profile Header -->
+  <div class="card mb-4" data-aos="fade-up">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-auto text-center">
+          <% if (profileUser.avatar_path) { %>
+          <img 
+            src="/uploads/avatars/<%= profileUser.avatar_path %>" 
+            alt="Avatar" 
+            class="rounded-circle"
+            style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--primary); box-shadow: var(--shadow-glow);"
+          />
+          <% } else { %>
+          <div 
+            class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold"
+            style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary), var(--accent)); font-size: 3rem; border: 3px solid var(--primary); box-shadow: var(--shadow-glow);"
+          >
+            <%= (profileUser.display_name || profileUser.full_name || profileUser.username).charAt(0).toUpperCase() %>
+          </div>
+          <% } %>
+        </div>
+        <div class="col">
+          <p class="text-uppercase text-muted small mb-1">
+            <i class="fas fa-user-circle me-1"></i>Public Profile
+          </p>
+          <h2 class="mb-1">
+            <%= profileUser.display_name || profileUser.full_name %> 
+            <span class="text-primary">(@<%= profileUser.username %>)</span>
+          </h2>
+          <% if (profileUser.bio) { %>
+          <p class="text-muted mb-2"><%= profileUser.bio %></p>
+          <% } %>
+          <% if (profileUser.website) { %>
+          <a href="<%= profileUser.website %>" target="_blank" class="text-primary text-decoration-none mb-2 d-inline-block">
+            <i class="fas fa-globe me-1"></i><%= profileUser.website %>
+          </a>
+          <% } %>
+        </div>
+        <div class="col-auto">
+          <a href="/" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Home
+          </a>
+        </div>
+      </div>
     </div>
-    <a href="/" class="btn btn-outline-secondary">Back to home</a>
   </div>
+
+  <!-- Stats Section -->
+  <% if (userStats) { %>
+  <div class="row g-4 mb-4">
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <i class="fas fa-folder fa-2x text-primary mb-2"></i>
+          <p class="text-muted mb-1 small">Total Resources</p>
+          <h4 class="fw-bold text-primary"><%= userStats.totalResources || 0 %></h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <i class="fas fa-globe fa-2x text-success mb-2"></i>
+          <p class="text-muted mb-1 small">Public Resources</p>
+          <h4 class="fw-bold text-success"><%= userStats.publicResources || 0 %></h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <i class="fas fa-star fa-2x text-warning mb-2"></i>
+          <p class="text-muted mb-1 small">Trust Score</p>
+          <h4 class="fw-bold text-warning"><%= userStats.totalTrustScore || 0 %></h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+      <div class="card text-center h-100">
+        <div class="card-body">
+          <i class="fas fa-comments fa-2x text-accent mb-2"></i>
+          <p class="text-muted mb-1 small">Comments</p>
+          <h4 class="fw-bold text-accent"><%= (userStats.commentsReceived || 0) + (userStats.commentsGiven || 0) %></h4>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
 
   <% if (resources.length) { %>
   <div class="row g-4">
     <% resources.forEach((resource) => { %>
-    <div class="col-md-6">
-      <div class="card h-100 shadow-sm border-0">
+    <div class="col-md-6" data-aos="fade-up">
+      <div class="card h-100">
         <% if (resource.image_path) { %>
-        <img
-          src="/uploads/<%= resource.image_path %>"
-          class="card-img-top"
-          alt="Thumbnail for <%= resource.title %>"
-          style="max-height: 220px; object-fit: cover;"
-        />
+        <a href="/resources/<%= resource.id %>">
+          <img
+            src="/uploads/<%= resource.image_path %>"
+            class="card-img-top"
+            alt="Thumbnail for <%= resource.title %>"
+            style="max-height: 220px; object-fit: cover; border-radius: 16px 16px 0 0; cursor: pointer;"
+          />
+        </a>
         <% } %>
         <div class="card-body d-flex flex-column">
           <div class="d-flex justify-content-between mb-2">
-            <div>
-              <h5 class="card-title mb-1"><%= resource.title %></h5>
+            <div class="flex-grow-1">
+              <h5 class="card-title mb-1">
+                <a href="/resources/<%= resource.id %>" class="text-decoration-none text-primary">
+                  <%= resource.title %>
+                </a>
+              </h5>
               <small class="text-muted">
-                <%= resource.domain_name || 'Uncategorized' %> •
-                <%= new Date(resource.created_at).toLocaleDateString() %>
+                <i class="fas fa-tag me-1"></i><%= resource.domain_name || 'Uncategorized' %> •
+                <i class="fas fa-calendar me-1"></i><%= new Date(resource.created_at).toLocaleDateString() %>
               </small>
             </div>
-            <span class="badge <%= resource.type === 'FILE' ? 'bg-info text-dark' : 'bg-success' %>">
+            <span class="badge <%= resource.type === 'FILE' ? 'bg-info' : 'bg-success' %> ms-2">
               <%= resource.type %>
             </span>
           </div>
           <p class="card-text flex-grow-1"><%= resource.description || 'No description provided.' %></p>
-          <% if (resource.purpose) { %>
-          <p class="small text-muted mb-1">Purpose: <%= resource.purpose %></p>
-          <% } %>
-          <p class="small text-muted mb-3">Trust score: <strong><%= resource.trust_score || 0 %></strong></p>
-          <div class="mt-auto d-flex gap-2">
+          <div class="small text-muted mb-3">
+            <% if (resource.purpose) { %>
+            <div class="mb-1">
+              <i class="fas fa-bullseye me-1"></i><strong>Purpose:</strong> <%= resource.purpose %>
+            </div>
+            <% } %>
+            <div>
+              <i class="fas fa-star me-1 text-warning"></i><strong>Trust Score:</strong> <span class="text-primary"><%= resource.trust_score || 0 %></span>
+            </div>
+          </div>
+          <div class="mt-auto d-flex flex-wrap gap-2">
             <% if (resource.type === 'FILE' && resource.file_path) { %>
-            <a href="/uploads/<%= resource.file_path %>" target="_blank" class="btn btn-outline-secondary btn-sm">
-              Download file
+            <a href="/uploads/<%= resource.file_path %>" target="_blank" class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation();">
+              <i class="fas fa-download me-1"></i>Download File
             </a>
             <% } %>
             <% if (resource.type === 'LINK' && resource.url) { %>
-            <a href="<%= resource.url %>" target="_blank" class="btn btn-outline-secondary btn-sm">
-              Open link
+            <a href="<%= resource.url %>" target="_blank" class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation();">
+              <i class="fas fa-external-link-alt me-1"></i>Open Link
             </a>
             <% } %>
-            <a href="/resources/<%= resource.id %>" class="btn btn-primary btn-sm">Details</a>
+            <a href="/resources/<%= resource.id %>" class="btn btn-primary btn-sm">
+              <i class="fas fa-eye me-1"></i>View Details
+            </a>
           </div>
         </div>
       </div>
@@ -60,8 +154,9 @@
     <% }) %>
   </div>
   <% } else { %>
-  <div class="text-center py-5">
-    <p class="text-muted mb-0">This user has not shared any public resources yet.</p>
+  <div class="text-center py-5" data-aos="fade-up">
+    <i class="fas fa-inbox fa-4x text-muted mb-3 d-block"></i>
+    <p class="text-muted fs-5 mb-0">This user has not shared any public resources yet.</p>
   </div>
   <% } %>
 </div>

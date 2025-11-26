@@ -1,0 +1,108 @@
+<%- include('../partials/head', { title }) %>
+<%- include('../partials/navbar') %>
+<div class="container py-5">
+  <h1 class="mb-4" data-aos="fade-up">
+    <i class="fas fa-trophy me-2 text-warning"></i>Leaderboard
+  </h1>
+  <p class="text-muted mb-4" data-aos="fade-up" data-aos-delay="100">
+    Top contributors ranked by their public resources, total resources, and community trust scores.
+  </p>
+
+  <div class="card" data-aos="fade-up" data-aos-delay="200">
+    <div class="card-body">
+      <% if (leaderboard && leaderboard.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Rank</th>
+              <th>User</th>
+              <th class="text-center">Total Resources</th>
+              <th class="text-center">Public Resources</th>
+              <th class="text-center">Trust Score</th>
+              <th class="text-center">Comments</th>
+              <th class="text-center">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% leaderboard.forEach((user, index) => { %>
+            <tr class="<%= user.rank <= 3 ? 'table-warning' : '' %>" data-aos="fade-up" data-aos-delay="<%= (index % 5) * 50 %>">
+              <td class="text-center">
+                <% if (user.rank === 1) { %>
+                <span class="badge bg-warning text-dark" style="font-size: 1.2rem; padding: 0.5rem;">
+                  <i class="fas fa-crown"></i> 1
+                </span>
+                <% } else if (user.rank === 2) { %>
+                <span class="badge bg-secondary" style="font-size: 1.1rem; padding: 0.4rem;">
+                  <i class="fas fa-medal"></i> 2
+                </span>
+                <% } else if (user.rank === 3) { %>
+                <span class="badge" style="background: #cd7f32; font-size: 1.1rem; padding: 0.4rem;">
+                  <i class="fas fa-medal"></i> 3
+                </span>
+                <% } else { %>
+                <strong class="text-muted">#<%= user.rank %></strong>
+                <% } %>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-3">
+                  <div>
+                    <% if (user.avatar_path) { %>
+                    <img 
+                      src="/uploads/avatars/<%= user.avatar_path %>" 
+                      alt="Avatar" 
+                      class="rounded-circle"
+                      style="width: 50px; height: 50px; object-fit: cover; border: 2px solid var(--primary);"
+                    />
+                    <% } else { %>
+                    <div 
+                      class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold"
+                      style="width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary), var(--accent)); font-size: 1.2rem;"
+                    >
+                      <%= (user.display_name || user.full_name || user.username).charAt(0).toUpperCase() %>
+                    </div>
+                    <% } %>
+                  </div>
+                  <div>
+                    <strong class="d-block">
+                      <%= user.display_name || user.full_name %>
+                    </strong>
+                    <a href="/u/<%= user.username %>" class="text-primary text-decoration-none small">
+                      @<%= user.username %>
+                    </a>
+                  </div>
+                </div>
+              </td>
+              <td class="text-center">
+                <strong class="text-primary"><%= user.resource_count || 0 %></strong>
+              </td>
+              <td class="text-center">
+                <strong class="text-success"><%= user.public_resource_count || 0 %></strong>
+              </td>
+              <td class="text-center">
+                <strong class="text-warning">
+                  <i class="fas fa-star me-1"></i><%= user.trust_score_sum || 0 %>
+                </strong>
+              </td>
+              <td class="text-center">
+                <strong class="text-accent"><%= user.comment_count || 0 %></strong>
+              </td>
+              <td class="text-center">
+                <strong class="text-primary" style="font-size: 1.1rem;"><%= user.score || 0 %></strong>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } else { %>
+      <div class="text-center py-5">
+        <i class="fas fa-inbox fa-4x text-muted mb-3 d-block"></i>
+        <p class="text-muted fs-5 mb-0">No users found on the leaderboard yet.</p>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>
+

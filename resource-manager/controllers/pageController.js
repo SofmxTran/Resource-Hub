@@ -26,6 +26,7 @@ function showHome(req, res) {
     filters,
     feed,
     domains,
+    activeNav: 'home',
   });
 }
 
@@ -44,6 +45,7 @@ function showDashboard(req, res) {
   res.render('dashboard', {
     title: 'Dashboard',
     stats,
+    activeNav: 'dashboard',
   });
 }
 

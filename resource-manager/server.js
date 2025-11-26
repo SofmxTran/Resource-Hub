@@ -9,6 +9,7 @@ const pageRoutes = require('./routes/pageRoutes');
 const domainRoutes = require('./routes/domainRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 const { ensureAuthenticated } = require('./middleware/authMiddleware');
 const userModel = require('./models/userModel');
 
@@ -45,7 +46,6 @@ app.use((req, res, next) => {
     }
   }
   res.locals.currentUser = req.session.user || null;
-  res.locals.currentPath = req.path; // For active menu highlighting
   res.locals.success = req.session.success || null;
   res.locals.error = req.session.error || null;
   delete req.session.success;
@@ -58,9 +58,13 @@ app.use('/', authRoutes);
 app.use('/domains', ensureAuthenticated, domainRoutes);
 app.use('/resources', resourceRoutes);
 app.use('/admin', adminRoutes);
+app.use('/settings', settingsRoutes);
 
 app.use((req, res) => {
-  res.status(404).render('404', { title: 'Page Not Found' });
+  res.status(404).render('404', { 
+    title: 'Page Not Found',
+    activeNav: null,
+  });
 });
 
 app.listen(PORT, () => {

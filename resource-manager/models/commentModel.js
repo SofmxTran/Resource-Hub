@@ -2,7 +2,7 @@ const db = require('../db/database');
 
 function getCommentsForResource(resourceId) {
   const stmt = db.prepare(
-    `SELECT c.*, u.username, u.full_name
+    `SELECT c.*, u.username, u.full_name, u.display_name, u.avatar_path
      FROM comments c
      INNER JOIN users u ON c.user_id = u.id
      WHERE c.resource_id = ?

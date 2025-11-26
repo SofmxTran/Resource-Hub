@@ -1,27 +1,38 @@
 ﻿<%- include('../partials/head', { title }) %>
 <%- include('../partials/navbar') %>
-<div class="container py-4">
+<div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-lg-8">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h4 class="mb-3">Add Resource</h4>
+      <div class="card" data-aos="zoom-in">
+        <div class="card-body p-4">
+          <div class="text-center mb-4">
+            <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+            <h4 class="mb-2">Add New Resource</h4>
+            <p class="text-muted small">Share files, links, and study guides with the community</p>
+          </div>
           <%- include('../partials/messages') %>
           <form action="/resources" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
-              <label class="form-label">Title</label>
-              <input type="text" class="form-control" name="title" required />
+              <label class="form-label">
+                <i class="fas fa-heading me-2"></i>Title
+              </label>
+              <input type="text" class="form-control" name="title" placeholder="Enter resource title" required />
             </div>
             <div class="mb-3">
-              <label class="form-label">Description</label>
+              <label class="form-label">
+                <i class="fas fa-align-left me-2"></i>Description
+              </label>
               <textarea
                 name="description"
                 class="form-control"
                 rows="3"
+                placeholder="Brief description of the resource"
               ></textarea>
             </div>
             <div class="mb-3">
-              <label class="form-label">Guide / Instructions</label>
+              <label class="form-label">
+                <i class="fas fa-book me-2"></i>Guide / Instructions
+              </label>
               <textarea
                 name="guideText"
                 class="form-control"
@@ -31,7 +42,9 @@
             </div>
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label">Domain</label>
+                <label class="form-label">
+                  <i class="fas fa-tag me-2"></i>Domain
+                </label>
                 <select name="domainId" class="form-select">
                   <option value="">Uncategorized</option>
                   <% domains.forEach((d) => { %>
@@ -40,7 +53,9 @@
                 </select>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Purpose</label>
+                <label class="form-label">
+                  <i class="fas fa-bullseye me-2"></i>Purpose
+                </label>
                 <% const purposeOptions = ['Study','Video Editing','Reference','Practice','Other']; %>
                 <select name="purpose" class="form-select">
                   <option value="">Select</option>
@@ -52,7 +67,9 @@
             </div>
             <div class="row g-3 mt-1">
               <div class="col-md-6">
-                <label class="form-label">Type</label>
+                <label class="form-label">
+                  <i class="fas fa-file-alt me-2"></i>Type
+                </label>
                 <select
                   name="type"
                   class="form-select"
@@ -64,29 +81,43 @@
                 </select>
               </div>
               <div class="col-md-6 file-field">
-                <label class="form-label">Upload File</label>
+                <label class="form-label">
+                  <i class="fas fa-upload me-2"></i>Upload File
+                </label>
                 <input class="form-control" type="file" name="fileUpload" />
               </div>
             </div>
             <div class="mt-3 link-field d-none">
-              <label class="form-label">URL</label>
-              <input type="url" class="form-control" name="url" />
+              <label class="form-label">
+                <i class="fas fa-link me-2"></i>URL
+              </label>
+              <input type="url" class="form-control" name="url" placeholder="https://example.com" />
             </div>
             <div class="mt-3">
-              <label class="form-label">Thumbnail image (optional)</label>
+              <label class="form-label">
+                <i class="fas fa-image me-2"></i>Thumbnail Image (optional)
+              </label>
               <input class="form-control" type="file" name="imageUpload" accept="image/*" />
-              <small class="text-muted">PNG, JPG or GIF. Used on the public feed.</small>
+              <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>PNG, JPG or GIF. Used on the public feed.
+              </small>
             </div>
             <div class="form-check form-switch mt-3">
               <input class="form-check-input" type="checkbox" name="isPublic" id="isPublic" checked />
-              <label class="form-check-label" for="isPublic">Public resource (shows on home feed)</label>
+              <label class="form-check-label" for="isPublic">
+                <i class="fas fa-globe me-1"></i>Public resource (shows on home feed)
+              </label>
             </div>
             <p class="small text-muted mt-1">
-              Public resources are reviewed by an admin before they appear on the home page.
+              <i class="fas fa-shield-alt me-1"></i>Public resources are reviewed by an admin before they appear on the home page.
             </p>
             <div class="d-flex justify-content-between mt-4">
-              <a href="/resources" class="btn btn-outline-secondary">Cancel</a>
-              <button class="btn btn-primary">Save Resource</button>
+              <a href="/resources" class="btn btn-outline-secondary">
+                <i class="fas fa-times me-1"></i>Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Save Resource
+              </button>
             </div>
           </form>
         </div>
@@ -95,16 +126,20 @@
   </div>
 </div>
 <script>
-  const typeSelect = document.getElementById('resourceType');
-  const fileField = document.querySelector('.file-field');
-  const linkField = document.querySelector('.link-field');
-  const toggleFields = () => {
-    const isFile = typeSelect.value === 'FILE';
-    fileField.classList.toggle('d-none', !isFile);
-    linkField.classList.toggle('d-none', isFile);
-  };
-  typeSelect.addEventListener('change', toggleFields);
-  toggleFields();
+  document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('resourceType');
+    const fileField = document.querySelector('.file-field');
+    const linkField = document.querySelector('.link-field');
+    const toggleFields = () => {
+      const isFile = typeSelect.value === 'FILE';
+      fileField.classList.toggle('d-none', !isFile);
+      linkField.classList.toggle('d-none', isFile);
+    };
+    if (typeSelect) {
+      typeSelect.addEventListener('change', toggleFields);
+      toggleFields();
+    }
+  });
 </script>
 <%- include('../partials/footer') %>
 

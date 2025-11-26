@@ -112,6 +112,8 @@ function getResourceForDetail(id) {
             d.name AS domain_name,
             u.username,
             u.full_name,
+            u.display_name,
+            u.avatar_path,
             u.id AS owner_id,
             COALESCE(v.trust_score, 0) AS trust_score
      FROM resources r
@@ -279,7 +281,7 @@ function getFavoriteResources(userId, limit = 5) {
 function getPublicResources(filters = {}, limit = 20) {
   const { where, params } = buildPublicFilters(filters);
   const query = `
-    SELECT r.*, d.name AS domain_name, u.username, u.full_name, COALESCE(v.trust_score, 0) AS trust_score
+    SELECT r.*, d.name AS domain_name, u.username, u.full_name, u.display_name, u.avatar_path, COALESCE(v.trust_score, 0) AS trust_score
     FROM resources r
     INNER JOIN users u ON r.user_id = u.id
     LEFT JOIN domains d ON r.domain_id = d.id
@@ -338,7 +340,7 @@ function getUserVisibilityStats(userId) {
 
 function getResourcesByStatus(status) {
   const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name, u.username, u.full_name, COALESCE(v.trust_score, 0) AS trust_score
+    `SELECT r.*, d.name AS domain_name, u.username, u.full_name, u.display_name, u.avatar_path, COALESCE(v.trust_score, 0) AS trust_score
      FROM resources r
      LEFT JOIN domains d ON r.domain_id = d.id
      INNER JOIN users u ON r.user_id = u.id
@@ -351,7 +353,7 @@ function getResourcesByStatus(status) {
 
 function getAllResourcesForAdmin() {
   const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name, u.username, u.full_name, COALESCE(v.trust_score, 0) AS trust_score
+    `SELECT r.*, d.name AS domain_name, u.username, u.full_name, u.display_name, u.avatar_path, COALESCE(v.trust_score, 0) AS trust_score
      FROM resources r
      LEFT JOIN domains d ON r.domain_id = d.id
      INNER JOIN users u ON r.user_id = u.id
@@ -362,7 +364,7 @@ function getAllResourcesForAdmin() {
 }
 function getRecentPending(limit = 5) {
   const stmt = db.prepare(
-    `SELECT r.*, u.username, u.full_name, d.name AS domain_name
+    `SELECT r.*, u.username, u.full_name, u.display_name, u.avatar_path, d.name AS domain_name
      FROM resources r
      INNER JOIN users u ON r.user_id = u.id
      LEFT JOIN domains d ON r.domain_id = d.id

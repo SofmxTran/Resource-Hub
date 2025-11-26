@@ -29,14 +29,22 @@ function seed() {
   if (!existingUser) {
     const hash = bcrypt.hashSync('password123', 10);
     const insert = db.prepare(
-      `INSERT INTO users (full_name, email, password_hash, username, is_admin) VALUES (?, ?, ?, ?, 0)`
+      `INSERT INTO users (full_name, email, password_hash, username, is_admin, display_name, bio) 
+       VALUES (?, ?, ?, ?, 0, ?, ?)`
     );
-    const result = insert.run('Sample Student', userEmail, hash, 'student');
+    const result = insert.run('Sample Student', userEmail, hash, 'student', 'Demo User', 'A sample student account for testing the Resource Hub.');
     userId = result.lastInsertRowid;
     console.log('Created sample user: student@example.com / password123');
   } else {
     if (!existingUser.username) {
       db.prepare('UPDATE users SET username = ? WHERE id = ?').run('student', existingUser.id);
+    }
+    // Update display_name and bio if not set
+    if (!existingUser.display_name) {
+      db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run('Demo User', existingUser.id);
+    }
+    if (!existingUser.bio) {
+      db.prepare('UPDATE users SET bio = ? WHERE id = ?').run('A sample student account for testing the Resource Hub.', existingUser.id);
     }
     userId = existingUser.id;
   }
@@ -46,13 +54,22 @@ function seed() {
   if (!existingAdmin) {
     const hash = bcrypt.hashSync('Admin123', 10);
     db.prepare(
-      `INSERT INTO users (full_name, email, password_hash, username, is_admin)
-       VALUES (?, ?, ?, ?, 1)`
-    ).run('Site Admin', adminEmail, hash, 'admin');
+      `INSERT INTO users (full_name, email, password_hash, username, is_admin, display_name, bio)
+       VALUES (?, ?, ?, ?, 1, ?, ?)`
+    ).run('Site Admin', adminEmail, hash, 'admin', 'Admin', 'Site administrator for WebHub Resource Manager.');
     console.log('Created admin user: admin@example.com / Admin123');
-  } else if (!existingAdmin.is_admin) {
-    db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').run(existingAdmin.id);
-    console.log('Updated existing admin@example.com to admin privileges.');
+  } else {
+    if (!existingAdmin.is_admin) {
+      db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').run(existingAdmin.id);
+      console.log('Updated existing admin@example.com to admin privileges.');
+    }
+    // Update display_name and bio if not set
+    if (!existingAdmin.display_name) {
+      db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run('Admin', existingAdmin.id);
+    }
+    if (!existingAdmin.bio) {
+      db.prepare('UPDATE users SET bio = ? WHERE id = ?').run('Site administrator for WebHub Resource Manager.', existingAdmin.id);
+    }
   }
 
   const domainNames = [

@@ -1,35 +1,41 @@
 <%- include('../partials/head', { title }) %>
 <%- include('../partials/navbar') %>
-<div class="container py-4">
+<div class="container py-5">
   <%- include('../partials/messages') %>
-  <h1 class="mb-3">Manage Resources</h1>
-  <p class="text-muted">Approve public submissions or audit content.</p>
-  <div class="card shadow-sm border-0 mb-4">
+  <h1 class="mb-3" data-aos="fade-up">
+    <i class="fas fa-cog me-2 text-primary"></i>Manage Resources
+  </h1>
+  <p class="text-muted mb-4" data-aos="fade-up" data-aos-delay="100">Approve public submissions or audit content.</p>
+  <div class="card mb-4" data-aos="fade-up" data-aos-delay="200">
     <div class="card-body">
-      <form class="row gy-2 gx-3 align-items-end">
+      <form class="row gy-2 gx-3 align-items-end" method="GET" action="/admin/resources" id="filterForm">
         <div class="col-md-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" name="status">
-            <option value="all" <%= status === 'ALL' || status === 'all' ? 'selected' : '' %>>
+          <label class="form-label">
+            <i class="fas fa-filter me-2"></i>Status
+          </label>
+          <select class="form-select" name="status" id="statusSelect" onchange="document.getElementById('filterForm').submit();">
+            <option value="all" <%= (!status || status === 'ALL' || status === 'all') ? 'selected' : '' %>>
               All
             </option>
             <% allowedStatuses.forEach((st) => { %>
-            <option value="<%= st %>" <%= status === st ? 'selected' : '' %>>
+            <option value="<%= st %>" <%= (status && status.toUpperCase() === st.toUpperCase()) ? 'selected' : '' %>>
               <%= st %>
             </option>
             <% }) %>
           </select>
         </div>
         <div class="col-md-2">
-          <button class="btn btn-primary">Filter</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search me-1"></i>Filter
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <div class="card shadow-sm border-0">
+  <div class="card" data-aos="fade-up" data-aos-delay="300">
     <div class="card-body">
-      <% if (resources.length) { %>
+      <% if (resources && resources.length > 0) { %>
       <div class="table-responsive">
         <table class="table align-middle">
           <thead>
@@ -45,48 +51,76 @@
             </tr>
           </thead>
           <tbody>
-            <% resources.forEach((res) => { %>
+            <% resources.forEach((res, index) => { %>
             <tr>
               <td>
-                <a href="/resources/<%= res.id %>" class="text-decoration-none fw-semibold"><%= res.title %></a>
-                <p class="mb-0 small text-muted"><%= res.description || '' %></p>
+                <a href="/resources/<%= res.id %>" class="text-decoration-none fw-semibold text-primary">
+                  <%= res.title %>
+                </a>
+                <% if (res.description) { %>
+                <p class="mb-0 small text-muted"><%= res.description %></p>
+                <% } %>
               </td>
-              <td>@<%= res.username %></td>
-              <td><%= res.domain_name || 'Uncategorized' %></td>
-              <td><%= res.type %></td>
-              <td><%= res.is_public ? 'Yes' : 'No' %></td>
               <td>
-                <span class="badge <%= res.status === 'APPROVED' ? 'bg-success' : res.status === 'PENDING' ? 'bg-warning text-dark' : 'bg-danger' %>">
+                <a href="/u/<%= res.username %>" class="text-primary">
+                  <%= res.display_name || res.full_name || res.username %> (@<%= res.username %>)
+                </a>
+              </td>
+              <td class="text-muted"><%= res.domain_name || 'Uncategorized' %></td>
+              <td>
+                <span class="badge <%= res.type === 'FILE' ? 'bg-info' : 'bg-success' %>">
+                  <%= res.type %>
+                </span>
+              </td>
+              <td>
+                <span class="badge <%= res.is_public ? 'bg-success' : 'bg-secondary' %>">
+                  <%= res.is_public ? 'Yes' : 'No' %>
+                </span>
+              </td>
+              <td>
+                <span class="badge <%= res.status === 'APPROVED' ? 'bg-success' : res.status === 'PENDING' ? 'bg-warning' : 'bg-danger' %>">
                   <%= res.status %>
                 </span>
               </td>
-              <td><strong><%= res.trust_score || 0 %></strong></td>
+              <td>
+                <strong class="text-primary">
+                  <i class="fas fa-star me-1 text-warning"></i><%= res.trust_score || 0 %>
+                </strong>
+              </td>
               <td>
                 <div class="d-flex flex-wrap gap-2">
-                  <a href="/resources/<%= res.id %>" class="btn btn-sm btn-outline-dark">View</a>
+                  <a href="/resources/<%= res.id %>" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>View
+                  </a>
                   <% if (res.status === 'PENDING' && res.is_public) { %>
                   <form
                     action="/admin/resources/<%= res.id %>/approve"
                     method="POST"
-                    class="d-inline"
+                    class="d-inline mb-0"
                   >
-                    <button class="btn btn-sm btn-success">Approve</button>
+                    <button type="submit" class="btn btn-sm btn-success">
+                      <i class="fas fa-check me-1"></i>Approve
+                    </button>
                   </form>
                   <form
                     action="/admin/resources/<%= res.id %>/reject"
                     method="POST"
-                    class="d-inline"
+                    class="d-inline mb-0"
                   >
-                    <button class="btn btn-sm btn-outline-warning">Reject</button>
+                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                      <i class="fas fa-times me-1"></i>Reject
+                    </button>
                   </form>
                   <% } %>
                   <form
                     action="/admin/resources/<%= res.id %>/delete"
                     method="POST"
-                    class="d-inline"
+                    class="d-inline mb-0"
                     onsubmit="return confirm('Delete this resource? This cannot be undone.');"
                   >
-                    <button class="btn btn-sm btn-outline-danger">Delete</button>
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="fas fa-trash me-1"></i>Delete
+                    </button>
                   </form>
                 </div>
               </td>
@@ -96,7 +130,16 @@
         </table>
       </div>
       <% } else { %>
-      <p class="text-muted mb-0">No resources match that filter.</p>
+      <div class="text-center py-5">
+        <i class="fas fa-inbox fa-4x text-muted mb-3 d-block"></i>
+        <p class="text-muted fs-5 mb-2">No resources match that filter.</p>
+        <% if (status && status !== 'ALL' && status !== 'all') { %>
+        <p class="text-muted small">Try selecting "All" to see all resources.</p>
+        <a href="/admin/resources?status=all" class="btn btn-outline-primary mt-2">
+          <i class="fas fa-list me-1"></i>View All Resources
+        </a>
+        <% } %>
+      </div>
       <% } %>
     </div>
   </div>

@@ -1,19 +1,24 @@
 ﻿<%- include('partials/head', { title }) %>
 <%- include('partials/navbar') %>
-<div class="container py-4">
+<div class="container py-5">
   <%- include('partials/messages') %>
+  <h1 class="mb-4" data-aos="fade-up">
+    <i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard
+  </h1>
   <div class="row g-4 mb-4">
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0">
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+      <div class="card h-100">
         <div class="card-body text-center">
+          <i class="fas fa-folder fa-3x text-primary mb-3"></i>
           <p class="text-muted mb-1">Total Resources</p>
-          <h2 class="fw-bold"><%= stats.totalResources %></h2>
+          <h2 class="fw-bold text-primary"><%= stats.totalResources %></h2>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0 h-100">
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+      <div class="card h-100">
         <div class="card-body text-center">
+          <i class="fas fa-eye fa-3x text-accent mb-3"></i>
           <p class="text-muted mb-1">Visibility</p>
           <div class="d-flex justify-content-around">
             <div>
@@ -22,22 +27,24 @@
             </div>
             <div>
               <p class="mb-1 text-uppercase small text-muted">Private</p>
-              <h4 class="fw-semibold text-secondary"><%= stats.visibility.private %></h4>
+              <h4 class="fw-semibold text-muted"><%= stats.visibility.private %></h4>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0 h-100">
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+      <div class="card h-100">
         <div class="card-body">
-          <h5 class="card-title">By Domain</h5>
+          <h5 class="card-title">
+            <i class="fas fa-tags me-2 text-primary"></i>By Domain
+          </h5>
           <% if (stats.breakdown.length) { %>
           <ul class="list-group list-group-flush">
             <% stats.breakdown.forEach((row) => { %>
             <li class="list-group-item d-flex justify-content-between">
               <span><%= row.domain_name %></span>
-              <strong><%= row.total %></strong>
+              <strong class="text-primary"><%= row.total %></strong>
             </li>
             <% }) %>
           </ul>
@@ -50,12 +57,14 @@
   </div>
 
   <div class="row g-4">
-    <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="400">
+      <div class="card h-100">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="card-title mb-0">Recent Resources</h5>
-            <a href="/resources" class="small">View all</a>
+            <h5 class="card-title mb-0">
+              <i class="fas fa-clock me-2 text-primary"></i>Recent Resources
+            </h5>
+            <a href="/resources" class="btn btn-sm btn-outline-primary">View all</a>
           </div>
           <% if (stats.recent.length) { %>
           <div class="list-group">
@@ -63,9 +72,11 @@
             <a href="/resources/<%= item.id %>/edit" class="list-group-item list-group-item-action">
               <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1"><%= item.title %></h6>
-                <small><%= item.type %></small>
+                <span class="badge <%= item.type === 'FILE' ? 'bg-info' : 'bg-success' %>"><%= item.type %></span>
               </div>
-              <small class="text-muted"><%= item.domain_name || 'Uncategorized' %></small>
+              <small class="text-muted">
+                <i class="fas fa-tag me-1"></i><%= item.domain_name || 'Uncategorized' %>
+              </small>
             </a>
             <% }) %>
           </div>
@@ -75,11 +86,13 @@
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="500">
+      <div class="card h-100">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="card-title mb-0">Favorites</h5>
+            <h5 class="card-title mb-0">
+              <i class="fas fa-star me-2 text-warning"></i>Favorites
+            </h5>
             <span class="badge bg-warning text-dark"><%= stats.favorites.length %></span>
           </div>
           <% if (stats.favorites.length) { %>
@@ -87,8 +100,10 @@
             <% stats.favorites.forEach((fav) => { %>
             <li class="list-group-item">
               <strong><%= fav.title %></strong>
-              <p class="mb-1 small"><%= fav.description || 'No description' %></p>
-              <small class="text-muted"><%= fav.domain_name || 'Uncategorized' %></small>
+              <p class="mb-1 small text-muted"><%= fav.description || 'No description' %></p>
+              <small class="text-muted">
+                <i class="fas fa-tag me-1"></i><%= fav.domain_name || 'Uncategorized' %>
+              </small>
             </li>
             <% }) %>
           </ul>
@@ -100,11 +115,13 @@
     </div>
   </div>
 
-  <div class="card shadow-sm border-0 mt-4">
+  <div class="card mt-4" data-aos="fade-up" data-aos-delay="600">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="card-title mb-0">Community Spotlight</h5>
-        <a href="/" class="small">View public feed</a>
+        <h5 class="card-title mb-0">
+          <i class="fas fa-fire me-2 text-primary"></i>Community Spotlight
+        </h5>
+        <a href="/" class="btn btn-sm btn-outline-primary">View public feed</a>
       </div>
       <% if (stats.publicFeed.length) { %>
       <div class="list-group">
@@ -112,10 +129,13 @@
         <a href="/u/<%= item.username %>" class="list-group-item list-group-item-action">
           <div class="d-flex w-100 justify-content-between">
             <h6 class="mb-1"><%= item.title %></h6>
-            <small>@<%= item.username %></small>
+            <small class="text-primary">
+              <%= item.display_name || item.full_name || item.username %> (@<%= item.username %>)
+            </small>
           </div>
           <small class="text-muted">
-            <%= item.type %> • <%= item.domain_name || 'Uncategorized' %> •
+            <span class="badge <%= item.type === 'FILE' ? 'bg-info' : 'bg-success' %> me-2"><%= item.type %></span>
+            <%= item.domain_name || 'Uncategorized' %> •
             <%= new Date(item.created_at).toLocaleDateString() %>
           </small>
         </a>

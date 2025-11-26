@@ -71,12 +71,17 @@ function listResources(req, res) {
     resources,
     domains,
     filters,
+    activeNav: 'resources',
   });
 }
 
 function renderNewResource(req, res) {
   const domains = domainModel.getAllDomains();
-  res.render('resources/new', { title: 'New Resource', domains });
+  res.render('resources/new', { 
+    title: 'New Resource', 
+    domains,
+    activeNav: 'resources',
+  });
 }
 
 function createResource(req, res) {
@@ -149,6 +154,7 @@ function renderEditResource(req, res) {
     title: `Edit ${resource.title}`,
     resource,
     domains,
+    activeNav: 'resources',
   });
 }
 
@@ -267,12 +273,15 @@ function showResourceDetail(req, res) {
     req.session.user && req.session.user.id
       ? voteModel.getVote(resource.id, req.session.user.id)
       : null;
+  const isAdmin = req.session.user && req.session.user.isAdmin;
 
   res.render('resources/show', {
     title: resource.title,
     resource,
     comments,
     userVote,
+    isAdmin,
+    activeNav: null, // Resource detail page should not highlight any navbar tab
   });
 }
 

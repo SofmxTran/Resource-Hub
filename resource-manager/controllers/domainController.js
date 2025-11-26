@@ -2,7 +2,11 @@
 
 function listDomains(req, res) {
   const domains = domainModel.getAllDomains();
-  res.render('domains/index', { title: 'Domains', domains });
+  res.render('domains/index', { 
+    title: 'Domains', 
+    domains,
+    activeNav: 'domains',
+  });
 }
 
 function createDomain(req, res) {
@@ -28,7 +32,11 @@ function renderEdit(req, res) {
     req.session.error = 'Domain not found.';
     return res.redirect('/domains');
   }
-  res.render('domains/edit', { title: 'Edit Domain', domain });
+  res.render('domains/edit', { 
+    title: 'Edit Domain', 
+    domain,
+    activeNav: 'domains',
+  });
 }
 
 function updateDomainHandler(req, res) {

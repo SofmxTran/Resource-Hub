@@ -9,13 +9,16 @@ function showProfile(req, res) {
     return res.redirect('/login');
   }
   const resources = resourceModel.getResourcesForUser(userId);
-  const stats = resourceModel.getUserVisibilityStats(userId);
+  const visibilityStats = resourceModel.getUserVisibilityStats(userId);
+  const userStats = userModel.getUserStats(userId);
 
   res.render('profile', {
     title: 'My Profile',
     user,
     resources,
-    stats,
+    stats: visibilityStats,
+    userStats,
+    activeNav: 'profile',
   });
 }
 
@@ -24,15 +27,18 @@ function showPublicProfile(req, res) {
   const profileUser = userModel.findByUsername(username);
 
   if (!profileUser) {
-    return res.status(404).render('404', { title: 'User Not Found' });
+    return res.status(404).render('404', { title: 'User Not Found', activeNav: null });
   }
 
   const resources = resourceModel.getPublicResourcesByUser(profileUser.id);
+  const userStats = userModel.getUserStats(profileUser.id);
 
   res.render('public-profile', {
-    title: `${profileUser.username} - Public Resources`,
+    title: `${profileUser.display_name || profileUser.username} - Public Profile`,
     profileUser,
     resources,
+    userStats,
+    activeNav: null,
   });
 }
 

@@ -1,52 +1,85 @@
-﻿<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+﻿<nav class="navbar navbar-expand-lg navbar-dark mb-4">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="/">Resource Hub</a>
+    <a class="navbar-brand fw-bold" href="/">
+      <i class="fas fa-cube me-2"></i>WebHub
+    </a>
     <button
       class="navbar-toggler"
       type="button"
       data-bs-toggle="collapse"
       data-bs-target="#navMenu"
+      aria-controls="navMenu"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
     >
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navMenu">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link <%= (currentPath || '') === '/' ? 'active' : '' %>" href="/">Home</a>
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'home') ? 'active' : '' %>" href="/">
+            <i class="fas fa-home me-1"></i>Home
+          </a>
         </li>
         <% if (currentUser) { %>
         <li class="nav-item">
-          <a class="nav-link <%= (currentPath || '') === '/dashboard' ? 'active' : '' %>" href="/dashboard">Dashboard</a>
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'dashboard') ? 'active' : '' %>" href="/dashboard">
+            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <%= (currentPath || '').startsWith('/resources') ? 'active' : '' %>" href="/resources">My Resources</a>
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'resources') ? 'active' : '' %>" href="/resources">
+            <i class="fas fa-folder me-1"></i>My Resources
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <%= (currentPath || '') === '/profile' ? 'active' : '' %>" href="/profile">My Profile</a>
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'profile') ? 'active' : '' %>" href="/profile">
+            <i class="fas fa-user me-1"></i>My Profile
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <%= (currentPath || '').startsWith('/domains') ? 'active' : '' %>" href="/domains">Domains</a>
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'domains') ? 'active' : '' %>" href="/domains">
+            <i class="fas fa-tags me-1"></i>Domains
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'leaderboard') ? 'active' : '' %>" href="/leaderboard">
+            <i class="fas fa-trophy me-1"></i>Leaderboard
+          </a>
         </li>
         <% if (currentUser.isAdmin) { %>
         <li class="nav-item">
-          <a class="nav-link <%= (currentPath || '').startsWith('/admin') ? 'active' : '' %>" href="/admin">Admin</a>
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'admin') ? 'active' : '' %>" href="/admin">
+            <i class="fas fa-shield-alt me-1"></i>Admin
+          </a>
         </li>
         <% } %>
+        <li class="nav-item">
+          <a class="nav-link <%= (typeof activeNav !== 'undefined' && activeNav === 'settings') ? 'active' : '' %>" href="/settings/profile">
+            <i class="fas fa-cog me-1"></i>Settings
+          </a>
+        </li>
         <% } %>
       </ul>
       <% if (currentUser) { %>
       <div class="d-flex align-items-center gap-3">
-        <span class="text-white small"
-          >Hi, <strong><%= currentUser.username %></strong></span
-        >
-        <form action="/logout" method="POST">
-          <button class="btn btn-outline-light btn-sm">Logout</button>
+        <span class="text-muted small">
+          <i class="fas fa-user-circle me-1"></i>Hi, <strong class="text-primary"><%= currentUser.username %></strong>
+        </span>
+        <form action="/logout" method="POST" class="mb-0">
+          <button type="submit" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-sign-out-alt me-1"></i>Logout
+          </button>
         </form>
       </div>
       <% } else { %>
       <div class="ms-auto d-flex gap-2">
-        <a class="btn btn-outline-light btn-sm" href="/login">Login</a>
-        <a class="btn btn-light btn-sm" href="/register">Register</a>
+        <a class="btn btn-outline-light btn-sm" href="/login">
+          <i class="fas fa-sign-in-alt me-1"></i>Login
+        </a>
+        <a class="btn btn-primary btn-sm" href="/register">
+          <i class="fas fa-user-plus me-1"></i>Register
+        </a>
       </div>
       <% } %>
     </div>

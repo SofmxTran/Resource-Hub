@@ -12,6 +12,7 @@ function renderDashboard(_req, res) {
   res.render('admin/dashboard', {
     title: 'Admin Dashboard',
     stats,
+    activeNav: 'admin',
   });
 }
 
@@ -28,6 +29,7 @@ function listResources(req, res) {
     resources,
     status,
     allowedStatuses,
+    activeNav: 'admin',
   });
 }
 
@@ -43,6 +45,12 @@ function updateResourceStatus(req, res, newStatus) {
     newStatus === 'APPROVED'
       ? 'Resource approved and will appear publicly.'
       : 'Resource rejected.';
+  
+  // If coming from resource detail page, redirect back there; otherwise go to admin panel
+  const referer = req.get('Referer') || '';
+  if (referer.includes(`/resources/${resourceId}`) && !referer.includes('/admin')) {
+    return res.redirect(`/resources/${resourceId}`);
+  }
   return res.redirect('/admin/resources?status=PENDING');
 }
 

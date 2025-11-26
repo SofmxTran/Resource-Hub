@@ -1,42 +1,116 @@
 <%- include('partials/head', { title }) %>
 <%- include('partials/navbar') %>
-<div class="container py-4">
-  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+<div class="container py-5">
+  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4" data-aos="fade-up">
     <div>
       <h2 class="mb-0">My Profile</h2>
       <p class="text-muted mb-1">Manage your account and personal resources.</p>
-      <a href="/u/<%= user.username %>" class="small text-decoration-none">View my public page →</a>
+      <div class="d-flex gap-2">
+        <a href="/u/<%= user.username %>" class="small text-primary text-decoration-none">
+          <i class="fas fa-eye me-1"></i>View my public page
+        </a>
+        <span class="text-muted">•</span>
+        <a href="/settings/profile" class="small text-primary text-decoration-none">
+          <i class="fas fa-cog me-1"></i>Edit profile
+        </a>
+      </div>
     </div>
-    <a class="btn btn-primary" href="/resources/new">Add resource</a>
+    <a class="btn btn-primary" href="/resources/new">
+      <i class="fas fa-plus me-1"></i>Add Resource
+    </a>
   </div>
 
-  <div class="row g-4 mb-4">
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h5 class="card-title">Account info</h5>
-          <p class="mb-1"><strong>Full name:</strong> <%= user.full_name %></p>
-          <p class="mb-1"><strong>Email:</strong> <%= user.email %></p>
-          <p class="mb-0"><strong>Username:</strong> @<%= user.username %></p>
+  <!-- Profile Header -->
+  <div class="card mb-4" data-aos="fade-up" data-aos-delay="100">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-auto text-center">
+          <% if (user.avatar_path) { %>
+          <img 
+            src="/uploads/avatars/<%= user.avatar_path %>" 
+            alt="Avatar" 
+            class="rounded-circle"
+            style="width: 100px; height: 100px; object-fit: cover; border: 3px solid var(--primary); box-shadow: var(--shadow-glow);"
+          />
+          <% } else { %>
+          <div 
+            class="rounded-circle d-inline-flex align-items-center justify-content-center text-white fw-bold"
+            style="width: 100px; height: 100px; background: linear-gradient(135deg, var(--primary), var(--accent)); font-size: 2rem; border: 3px solid var(--primary); box-shadow: var(--shadow-glow);"
+          >
+            <%= (user.display_name || user.full_name || user.username).charAt(0).toUpperCase() %>
+          </div>
+          <% } %>
+        </div>
+        <div class="col">
+          <h3 class="mb-1">
+            <%= user.display_name || user.full_name %>
+            <span class="text-primary">(@<%= user.username %>)</span>
+          </h3>
+          <p class="text-muted mb-2">
+            <i class="fas fa-envelope me-1"></i><%= user.email %>
+          </p>
+          <% if (user.bio) { %>
+          <p class="mb-2"><%= user.bio %></p>
+          <% } %>
+          <% if (user.website) { %>
+          <a href="<%= user.website %>" target="_blank" class="text-primary text-decoration-none">
+            <i class="fas fa-globe me-1"></i><%= user.website %>
+          </a>
+          <% } %>
         </div>
       </div>
     </div>
-    <div class="col-md-8">
-      <div class="card shadow-sm border-0">
+  </div>
+
+  <!-- Stats Section -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
+      <div class="card h-100">
         <div class="card-body">
-          <h5 class="card-title">Resource stats</h5>
+          <h5 class="card-title mb-3">
+            <i class="fas fa-chart-bar me-2 text-primary"></i>Resource Stats
+          </h5>
           <div class="row text-center">
-            <div class="col-md-4">
-              <p class="text-muted mb-1">Total</p>
-              <h4 class="fw-bold"><%= stats.total %></h4>
+            <div class="col-4">
+              <p class="text-muted mb-1 small">Total</p>
+              <h4 class="fw-bold text-primary"><%= stats.total %></h4>
             </div>
-            <div class="col-md-4">
-              <p class="text-muted mb-1">Public</p>
+            <div class="col-4">
+              <p class="text-muted mb-1 small">Public</p>
               <h4 class="fw-bold text-success"><%= stats.public %></h4>
             </div>
-            <div class="col-md-4">
-              <p class="text-muted mb-1">Private</p>
-              <h4 class="fw-bold text-secondary"><%= stats.private %></h4>
+            <div class="col-4">
+              <p class="text-muted mb-1 small">Private</p>
+              <h4 class="fw-bold text-muted"><%= stats.private %></h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6" data-aos="fade-up" data-aos-delay="300">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-3">
+            <i class="fas fa-trophy me-2 text-warning"></i>Community Stats
+          </h5>
+          <div class="row text-center">
+            <div class="col-6 mb-3">
+              <p class="text-muted mb-1 small">Trust Score</p>
+              <h4 class="fw-bold text-warning">
+                <i class="fas fa-star me-1"></i><%= userStats.totalTrustScore || 0 %>
+              </h4>
+            </div>
+            <div class="col-6 mb-3">
+              <p class="text-muted mb-1 small">Comments Received</p>
+              <h4 class="fw-bold text-accent"><%= userStats.commentsReceived || 0 %></h4>
+            </div>
+            <div class="col-6">
+              <p class="text-muted mb-1 small">Comments Given</p>
+              <h4 class="fw-bold text-primary"><%= userStats.commentsGiven || 0 %></h4>
+            </div>
+            <div class="col-6">
+              <p class="text-muted mb-1 small">Public Resources</p>
+              <h4 class="fw-bold text-success"><%= userStats.publicResources || 0 %></h4>
             </div>
           </div>
         </div>
@@ -44,11 +118,15 @@
     </div>
   </div>
 
-  <div class="card shadow-sm border-0">
+  <div class="card" data-aos="fade-up" data-aos-delay="400">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="card-title mb-0">Your resources</h5>
-        <a class="small" href="/resources">Go to resources</a>
+        <h5 class="card-title mb-0">
+          <i class="fas fa-folder me-2 text-primary"></i>Your Resources
+        </h5>
+        <a class="btn btn-sm btn-outline-primary" href="/resources">
+          <i class="fas fa-list me-1"></i>Go to Resources
+        </a>
       </div>
       <% if (resources.length) { %>
       <div class="table-responsive">
