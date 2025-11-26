@@ -2,6 +2,11 @@
 
 Hướng dẫn này giúp bạn deploy WebHub lên Render và giữ nguyên database cùng tài khoản admin hiện tại.
 
+## ⚠️ Lưu ý về Render Plans
+
+- **Render Free Plan**: Không có persistent disk, database sẽ bị mất khi service restart. **Xem `DEPLOY-FREE.md` để biết cách deploy trên free plan.**
+- **Render Paid Plan**: Có persistent disk, có thể lưu database và uploads. **Sử dụng hướng dẫn bên dưới.**
+
 ## Bước 1: Backup Database hiện tại
 
 Trước khi deploy, hãy backup database của bạn:

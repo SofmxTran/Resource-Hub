@@ -188,14 +188,13 @@ git push -u origin main
    npm run backup-db
    ```
 
-2. **Upload database backup lên Render persistent disk** sau khi deploy lần đầu (xem `DEPLOY.md` để biết chi tiết).
+2. **Chọn hướng dẫn phù hợp:**
+   - **Render Paid Plan** (có persistent disk): Xem **`DEPLOY.md`**
+   - **Render Free Plan** (không có persistent disk): Xem **`DEPLOY-FREE.md`**
 
-3. **Tạo thư mục uploads trên persistent disk:**
-   ```bash
-   mkdir -p /opt/render/project/src/data/uploads/avatars
-   ```
+3. **Upload database backup** theo hướng dẫn trong file tương ứng.
 
-Xem file **`DEPLOY.md`** để có hướng dẫn chi tiết về cách deploy và giữ nguyên database.
+Xem file **`DEPLOY.md`** (paid plan) hoặc **`DEPLOY-FREE.md`** (free plan) để có hướng dẫn chi tiết.
 
 Railway/Heroku or any Node-friendly platform follow the same pattern: install dependencies and run `npm start` with the same env vars.
 
