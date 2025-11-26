@@ -1,11 +1,14 @@
-const express = require('express');
+﻿const express = require('express');
 const pageController = require('../controllers/pageController');
+const userController = require('../controllers/userController');
 const { ensureAuthenticated } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/', pageController.showLanding);
+router.get('/', pageController.showHome);
 router.get('/dashboard', ensureAuthenticated, pageController.showDashboard);
+router.get('/profile', ensureAuthenticated, userController.showProfile);
+router.get('/u/:username', userController.showPublicProfile);
 
 module.exports = router;
 

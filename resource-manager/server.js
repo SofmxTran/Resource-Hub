@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 require('dotenv').config();
 
 const express = require('express');
@@ -8,7 +8,9 @@ const authRoutes = require('./routes/authRoutes');
 const pageRoutes = require('./routes/pageRoutes');
 const domainRoutes = require('./routes/domainRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { ensureAuthenticated } = require('./middleware/authMiddleware');
+const userModel = require('./models/userModel');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,7 +31,21 @@ app.use(
 );
 
 app.use((req, res, next) => {
+  // Refresh user info from DB if session has user (to ensure isAdmin is up-to-date)
+  if (req.session.user && req.session.user.id) {
+    const dbUser = userModel.findById(req.session.user.id);
+    if (dbUser) {
+      req.session.user = {
+        id: dbUser.id,
+        fullName: dbUser.full_name,
+        email: dbUser.email,
+        username: dbUser.username,
+        isAdmin: !!dbUser.is_admin,
+      };
+    }
+  }
   res.locals.currentUser = req.session.user || null;
+  res.locals.currentPath = req.path; // For active menu highlighting
   res.locals.success = req.session.success || null;
   res.locals.error = req.session.error || null;
   delete req.session.success;
@@ -40,7 +56,8 @@ app.use((req, res, next) => {
 app.use('/', pageRoutes);
 app.use('/', authRoutes);
 app.use('/domains', ensureAuthenticated, domainRoutes);
-app.use('/resources', ensureAuthenticated, resourceRoutes);
+app.use('/resources', resourceRoutes);
+app.use('/admin', adminRoutes);
 
 app.use((req, res) => {
   res.status(404).render('404', { title: 'Page Not Found' });

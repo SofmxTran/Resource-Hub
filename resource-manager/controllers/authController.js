@@ -1,32 +1,56 @@
-const bcrypt = require('bcrypt');
+﻿const bcrypt = require('bcrypt');
 const userModel = require('../models/userModel');
 
 function renderRegister(req, res) {
   res.render('auth/register', { title: 'Create Account' });
 }
 
-async function register(req, res) {
-  const { fullName, email, password } = req.body;
+function sanitizeUsername(username) {
+  return username
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '')
+    .slice(0, 20);
+}
 
-  if (!fullName || !email || !password) {
-    req.session.error = 'All fields are required.';
+async function register(req, res) {
+  const fullName = (req.body.fullName || '').trim();
+  const email = (req.body.email || '').trim().toLowerCase();
+  const rawUsername = (req.body.username || '').trim();
+  const username = sanitizeUsername(rawUsername);
+  const password = req.body.password || '';
+
+  if (!fullName || !email || !username || !password) {
+    req.session.error = 'Full name, email, username, and password are required.';
     return res.redirect('/register');
   }
 
-  const existing = userModel.findByEmail(email.toLowerCase());
-  if (existing) {
+  if (username.length < 3) {
+    req.session.error = 'Username must be at least 3 characters.';
+    return res.redirect('/register');
+  }
+
+  const existingEmail = userModel.findByEmail(email);
+  if (existingEmail) {
     req.session.error = 'Email already registered.';
+    return res.redirect('/register');
+  }
+
+  const existingUsername = userModel.findByUsername(username);
+  if (existingUsername) {
+    req.session.error = 'Username already taken.';
     return res.redirect('/register');
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = userModel.createUser({
     fullName,
-    email: email.toLowerCase(),
+    email,
     passwordHash,
+    username,
+    isAdmin: 0,
   });
 
-  req.session.user = { id: user.id, fullName: user.full_name, email: user.email };
+  req.session.user = buildSessionUser(user);
   req.session.success = 'Welcome! Account created.';
   return res.redirect('/dashboard');
 }
@@ -36,13 +60,15 @@ function renderLogin(req, res) {
 }
 
 async function login(req, res) {
-  const { email, password } = req.body;
+  const email = (req.body.email || '').trim().toLowerCase();
+  const password = req.body.password || '';
+
   if (!email || !password) {
     req.session.error = 'Email and password required.';
     return res.redirect('/login');
   }
 
-  const user = userModel.findByEmail(email.toLowerCase());
+  const user = userModel.findByEmail(email);
   if (!user) {
     req.session.error = 'Invalid credentials.';
     return res.redirect('/login');
@@ -54,13 +80,19 @@ async function login(req, res) {
     return res.redirect('/login');
   }
 
-  req.session.user = {
+  req.session.user = buildSessionUser(user);
+  req.session.success = 'Logged in successfully.';
+  return res.redirect('/dashboard');
+}
+
+function buildSessionUser(user) {
+  return {
     id: user.id,
     fullName: user.full_name,
     email: user.email,
+    username: user.username,
+    isAdmin: !!user.is_admin,
   };
-  req.session.success = 'Logged in successfully.';
-  return res.redirect('/dashboard');
 }
 
 function logout(req, res) {

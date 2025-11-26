@@ -1,8 +1,11 @@
-const path = require('path');
+﻿const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const multer = require('multer');
 const resourceController = require('../controllers/resourceController');
+const {
+  ensureAuthenticated,
+} = require('../middleware/authMiddleware');
 
 const uploadDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -18,20 +21,58 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+const uploadFields = upload.fields([
+  { name: 'fileUpload', maxCount: 1 },
+  { name: 'imageUpload', maxCount: 1 },
+]);
 
 const router = express.Router();
 
-router.get('/', resourceController.listResources);
-router.get('/new', resourceController.renderNewResource);
-router.post('/', upload.single('fileUpload'), resourceController.createResource);
-router.get('/:id/edit', resourceController.renderEditResource);
+router.get('/', ensureAuthenticated, resourceController.listResources);
+router.get('/new', ensureAuthenticated, resourceController.renderNewResource);
+router.post(
+  '/',
+  ensureAuthenticated,
+  uploadFields,
+  resourceController.createResource
+);
+router.get(
+  '/:id/edit',
+  ensureAuthenticated,
+  resourceController.renderEditResource
+);
 router.post(
   '/:id/edit',
-  upload.single('fileUpload'),
+  ensureAuthenticated,
+  uploadFields,
   resourceController.updateResourceHandler
 );
-router.post('/:id/delete', resourceController.deleteResourceHandler);
-router.post('/:id/favorite', resourceController.toggleFavoriteHandler);
+router.post(
+  '/:id/delete',
+  ensureAuthenticated,
+  resourceController.deleteResourceHandler
+);
+router.post(
+  '/:id/favorite',
+  ensureAuthenticated,
+  resourceController.toggleFavoriteHandler
+);
+router.post(
+  '/:id/comments',
+  ensureAuthenticated,
+  resourceController.addComment
+);
+router.post(
+  '/:id/comments/:commentId/delete',
+  ensureAuthenticated,
+  resourceController.deleteComment
+);
+router.post(
+  '/:id/vote',
+  ensureAuthenticated,
+  resourceController.submitTrustVote
+);
+router.get('/:id', resourceController.showResourceDetail);
 
 module.exports = router;
 

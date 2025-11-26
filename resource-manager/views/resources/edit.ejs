@@ -1,4 +1,4 @@
-<%- include('../partials/head', { title }) %>
+﻿<%- include('../partials/head', { title }) %>
 <%- include('../partials/navbar') %>
 <div class="container py-4">
   <div class="row justify-content-center">
@@ -29,6 +29,14 @@
                 class="form-control"
                 rows="3"
               ><%= resource.description || '' %></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Guide / Instructions</label>
+              <textarea
+                name="guideText"
+                class="form-control"
+                rows="4"
+              ><%= resource.guide_text || '' %></textarea>
             </div>
             <div class="row g-3">
               <div class="col-md-6">
@@ -93,7 +101,7 @@
                 <input class="form-control" type="file" name="fileUpload" />
               </div>
             </div>
-            <div class="mt-3 link-field">
+            <div class="mt-3 link-field <%= resource.type === 'FILE' ? 'd-none' : '' %>">
               <label class="form-label">URL</label>
               <input
                 type="url"
@@ -102,6 +110,36 @@
                 value="<%= resource.url || '' %>"
               />
             </div>
+            <div class="mt-3">
+              <label class="form-label">Thumbnail image</label>
+              <% if (resource.image_path) { %>
+              <div class="mb-2">
+                <img
+                  src="/uploads/<%= resource.image_path %>"
+                  alt="Thumbnail"
+                  class="img-fluid rounded"
+                  style="max-height: 160px; object-fit: cover;"
+                />
+              </div>
+              <% } %>
+              <input class="form-control" type="file" name="imageUpload" accept="image/*" />
+              <small class="text-muted">Uploading a new image replaces the old one.</small>
+            </div>
+            <div class="form-check form-switch mt-3">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                name="isPublic"
+                id="isPublic"
+                <%= resource.is_public ? 'checked' : '' %>
+              />
+              <label class="form-check-label" for="isPublic">
+                Public resource (shows on home feed)
+              </label>
+            </div>
+            <p class="small text-muted mt-1">
+              Current status: <strong><%= resource.status %></strong>. Public updates may require re-approval.
+            </p>
             <div class="d-flex justify-content-between mt-4">
               <a href="/resources" class="btn btn-outline-secondary">Back</a>
               <button class="btn btn-primary">Update Resource</button>

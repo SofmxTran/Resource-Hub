@@ -1,8 +1,8 @@
-<%- include('../partials/head', { title }) %>
+﻿<%- include('../partials/head', { title }) %>
 <%- include('../partials/navbar') %>
 <div class="container py-4">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Resources</h3>
+    <h3 class="mb-0">My Resources</h3>
     <a class="btn btn-primary" href="/resources/new">Add Resource</a>
   </div>
   <%- include('../partials/messages') %>
@@ -50,6 +50,23 @@
             <% }) %>
           </select>
         </div>
+        <div class="col-md-2">
+          <label class="form-label">Status</label>
+          <select class="form-select" name="status">
+            <option value="ALL" <%= filters.status === 'ALL' ? 'selected' : '' %>>
+              Any
+            </option>
+            <option value="PENDING" <%= filters.status === 'PENDING' ? 'selected' : '' %>>
+              Pending
+            </option>
+            <option value="APPROVED" <%= filters.status === 'APPROVED' ? 'selected' : '' %>>
+              Approved
+            </option>
+            <option value="REJECTED" <%= filters.status === 'REJECTED' ? 'selected' : '' %>>
+              Rejected
+            </option>
+          </select>
+        </div>
         <div class="col-md-3">
           <label class="form-label">Search</label>
           <input
@@ -79,6 +96,7 @@
       </form>
     </div>
   </div>
+  <p class="text-muted small mb-3">Public resources marked as pending will appear on the home feed after an admin approves them.</p>
 
   <div class="card shadow-sm border-0">
     <div class="card-body">
@@ -91,6 +109,9 @@
               <th>Domain</th>
               <th>Purpose</th>
               <th>Type</th>
+              <th>Trust</th>
+              <th>Visibility</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -98,7 +119,7 @@
             <% resources.forEach((res) => { %>
             <tr>
               <td>
-                <strong><%= res.title %></strong>
+                <strong><a href="/resources/<%= res.id %>" class="text-decoration-none"><%= res.title %></a></strong>
                 <p class="mb-0 small text-muted"><%= res.description || '' %></p>
               </td>
               <td><%= res.domain_name || 'Uncategorized' %></td>
@@ -106,6 +127,17 @@
               <td>
                 <span class="badge <%= res.type === 'FILE' ? 'bg-info text-dark' : 'bg-success' %>">
                   <%= res.type %>
+                </span>
+              </td>
+              <td><strong><%= res.trust_score || 0 %></strong></td>
+              <td>
+                <span class="badge <%= res.is_public ? 'bg-success' : 'bg-secondary' %>">
+                  <%= res.is_public ? 'Public' : 'Private' %>
+                </span>
+              </td>
+              <td>
+                <span class="badge <%= res.status === 'APPROVED' ? 'bg-success' : res.status === 'PENDING' ? 'bg-warning text-dark' : 'bg-danger' %>">
+                  <%= res.status %>
                 </span>
               </td>
               <td class="text-end">
@@ -125,6 +157,7 @@
                   >Visit</a
                 >
                 <% } %>
+                <a class="btn btn-sm btn-outline-dark" href="/resources/<%= res.id %>">View</a>
                 <a class="btn btn-sm btn-outline-primary" href="/resources/<%= res.id %>/edit"
                   >Edit</a
                 >

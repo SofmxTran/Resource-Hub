@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
@@ -29,11 +29,30 @@ function seed() {
   if (!existingUser) {
     const hash = bcrypt.hashSync('password123', 10);
     const insert = db.prepare(
-      `INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)`
+      `INSERT INTO users (full_name, email, password_hash, username, is_admin) VALUES (?, ?, ?, ?, 0)`
     );
-    const result = insert.run('Sample Student', userEmail, hash);
+    const result = insert.run('Sample Student', userEmail, hash, 'student');
     userId = result.lastInsertRowid;
     console.log('Created sample user: student@example.com / password123');
+  } else {
+    if (!existingUser.username) {
+      db.prepare('UPDATE users SET username = ? WHERE id = ?').run('student', existingUser.id);
+    }
+    userId = existingUser.id;
+  }
+
+  const adminEmail = 'admin@example.com';
+  const existingAdmin = db.prepare('SELECT * FROM users WHERE email = ?').get(adminEmail);
+  if (!existingAdmin) {
+    const hash = bcrypt.hashSync('Admin123', 10);
+    db.prepare(
+      `INSERT INTO users (full_name, email, password_hash, username, is_admin)
+       VALUES (?, ?, ?, ?, 1)`
+    ).run('Site Admin', adminEmail, hash, 'admin');
+    console.log('Created admin user: admin@example.com / Admin123');
+  } else if (!existingAdmin.is_admin) {
+    db.prepare('UPDATE users SET is_admin = 1 WHERE id = ?').run(existingAdmin.id);
+    console.log('Updated existing admin@example.com to admin privileges.');
   }
 
   const domainNames = [
@@ -65,8 +84,8 @@ function seed() {
   if (existingResources === 0) {
     db.prepare(
       `INSERT INTO resources 
-      (user_id, domain_id, title, description, type, file_path, url, purpose, is_favorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      (user_id, domain_id, title, description, type, file_path, image_path, url, purpose, guide_text, is_favorite, is_public, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       userId,
       programmingDomain ? programmingDomain.id : null,
@@ -75,14 +94,18 @@ function seed() {
       'FILE',
       path.basename(sampleFile),
       null,
+      null,
       'Study',
-      1
+      'Read through the PDF, then practice each exercise in your IDE.',
+      1,
+      1,
+      'APPROVED'
     );
 
     db.prepare(
       `INSERT INTO resources 
-      (user_id, domain_id, title, description, type, file_path, url, purpose, is_favorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      (user_id, domain_id, title, description, type, file_path, image_path, url, purpose, guide_text, is_favorite, is_public, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       userId,
       videoDomain ? videoDomain.id : null,
@@ -90,9 +113,13 @@ function seed() {
       'YouTube playlist for fast color grading tips.',
       'LINK',
       null,
+      null,
       'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       'Video Editing',
-      0
+      'Watch the first episode, practice with sample footage, then tweak color wheels.',
+      0,
+      1,
+      'APPROVED'
     );
     console.log('Inserted sample resources.');
   }

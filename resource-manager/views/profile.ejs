@@ -1,0 +1,97 @@
+<%- include('partials/head', { title }) %>
+<%- include('partials/navbar') %>
+<div class="container py-4">
+  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0">My Profile</h2>
+      <p class="text-muted mb-1">Manage your account and personal resources.</p>
+      <a href="/u/<%= user.username %>" class="small text-decoration-none">View my public page →</a>
+    </div>
+    <a class="btn btn-primary" href="/resources/new">Add resource</a>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h5 class="card-title">Account info</h5>
+          <p class="mb-1"><strong>Full name:</strong> <%= user.full_name %></p>
+          <p class="mb-1"><strong>Email:</strong> <%= user.email %></p>
+          <p class="mb-0"><strong>Username:</strong> @<%= user.username %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title">Resource stats</h5>
+          <div class="row text-center">
+            <div class="col-md-4">
+              <p class="text-muted mb-1">Total</p>
+              <h4 class="fw-bold"><%= stats.total %></h4>
+            </div>
+            <div class="col-md-4">
+              <p class="text-muted mb-1">Public</p>
+              <h4 class="fw-bold text-success"><%= stats.public %></h4>
+            </div>
+            <div class="col-md-4">
+              <p class="text-muted mb-1">Private</p>
+              <h4 class="fw-bold text-secondary"><%= stats.private %></h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title mb-0">Your resources</h5>
+        <a class="small" href="/resources">Go to resources</a>
+      </div>
+      <% if (resources.length) { %>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Domain</th>
+              <th>Type</th>
+              <th>Trust</th>
+              <th>Visibility</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% resources.forEach((item) => { %>
+            <tr>
+              <td><a href="/resources/<%= item.id %>" class="text-decoration-none"><%= item.title %></a></td>
+              <td><%= item.domain_name || 'Uncategorized' %></td>
+              <td><%= item.type %></td>
+              <td><strong><%= item.trust_score || 0 %></strong></td>
+              <td>
+                <span class="badge <%= item.is_public ? 'bg-success' : 'bg-secondary' %>">
+                  <%= item.is_public ? 'Public' : 'Private' %>
+                </span>
+              </td>
+              <td>
+                <span class="badge <%= item.status === 'APPROVED' ? 'bg-success' : item.status === 'PENDING' ? 'bg-warning text-dark' : 'bg-danger' %>">
+                  <%= item.status %>
+                </span>
+              </td>
+              <td><%= new Date(item.created_at).toLocaleDateString() %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } else { %>
+      <p class="text-muted mb-0">You have not created any resources yet.</p>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>
+

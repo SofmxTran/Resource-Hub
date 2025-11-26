@@ -1,33 +1,178 @@
-<%- include('partials/head', { title }) %>
+﻿<%- include('partials/head', { title }) %>
 <%- include('partials/navbar') %>
 <div class="container py-5">
-  <div class="row align-items-center">
-    <div class="col-md-7">
-      <h1 class="display-5 fw-bold mb-3">My Resource Hub</h1>
-      <p class="lead">
-        Keep all your study files, helpful links, and creative assets neatly
-        organized in one place. Tag them by domain, search quickly, and mark
-        your favourites for instant access.
-      </p>
-      <div class="d-flex gap-3 mt-4">
-        <a href="/register" class="btn btn-primary btn-lg">Get Started</a>
-        <a href="/login" class="btn btn-outline-secondary btn-lg">Sign In</a>
-      </div>
+  <% if (currentUser) { %>
+  <div class="alert alert-primary d-flex justify-content-between align-items-center">
+    <div>
+      You are logged in as <strong>@<%= currentUser.username %></strong>.
     </div>
-    <div class="col-md-5">
-      <div class="card shadow border-0">
+    <a href="/dashboard" class="btn btn-sm btn-outline-primary bg-white">Go to dashboard</a>
+  </div>
+  <% } %>
+
+  <div class="row g-4 align-items-center mb-5">
+    <div class="col-lg-7">
+      <h1 class="display-5 fw-bold mb-3">My Resource Hub</h1>
+      <p class="lead text-muted">
+        Discover and share study files, helpful links, and creative assets with the community.
+        Mark resources as public to inspire others or keep them private for your own vault.
+      </p>
+      <% if (!currentUser) { %>
+      <div class="d-flex flex-wrap gap-3 mt-4">
+        <a href="/register" class="btn btn-primary btn-lg">Create free account</a>
+        <a href="/login" class="btn btn-outline-secondary btn-lg">Sign in</a>
+      </div>
+      <% } %>
+    </div>
+    <div class="col-lg-5">
+      <div class="card hero-card border-0 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">App Highlights</h5>
+          <h5 class="card-title text-uppercase text-muted">Why students use it</h5>
           <ul class="list-unstyled mb-0 small">
-            <li>✓ Upload PDFs, PPTs, DOCX, and more</li>
-            <li>✓ Save YouTube videos and tutorial links</li>
-            <li>✓ Organize by domains like Programming or Design</li>
-            <li>✓ Powerful search, filters, and favorites</li>
+            <li>• Keep subject domains organized</li>
+            <li>• Upload files or drop your favourite URLs</li>
+            <li>• Set resources public or private per item</li>
+            <li>• Filters make it easy to find what you need fast</li>
           </ul>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <form class="row gy-2 gx-3 align-items-end" method="GET" action="/">
+        <div class="col-md-3">
+          <label class="form-label">Keyword</label>
+          <input
+            type="text"
+            name="q"
+            class="form-control"
+            placeholder="Title or description"
+            value="<%= filters.q %>"
+          />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Domain</label>
+          <select class="form-select" name="domain">
+            <option value="all" <%= filters.domain === 'all' ? 'selected' : '' %>>
+              All domains
+            </option>
+            <% domains.forEach((domain) => { %>
+            <option value="<%= domain.id %>" <%= filters.domain == domain.id ? 'selected' : '' %>>
+              <%= domain.name %>
+            </option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Type</label>
+          <select class="form-select" name="type">
+            <option value="all" <%= filters.type === 'all' ? 'selected' : '' %>>
+              Both
+            </option>
+            <option value="FILE" <%= filters.type === 'FILE' ? 'selected' : '' %>>
+              Files
+            </option>
+            <option value="LINK" <%= filters.type === 'LINK' ? 'selected' : '' %>>
+              Links
+            </option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Purpose</label>
+          <% const purposeOptions = ['Study', 'Video Editing', 'Reference', 'Practice', 'Other']; %>
+          <select class="form-select" name="purpose">
+            <option value="all" <%= filters.purpose === 'all' ? 'selected' : '' %>>
+              Any
+            </option>
+            <% purposeOptions.forEach((p) => { %>
+            <option value="<%= p %>" <%= filters.purpose === p ? 'selected' : '' %>>
+              <%= p %>
+            </option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-2 text-end d-flex gap-2 justify-content-end">
+          <button class="btn btn-primary">Search</button>
+          <a href="/" class="btn btn-link">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Latest public resources</h2>
+    <% if (!currentUser) { %>
+    <a href="/register" class="text-decoration-none">Share yours →</a>
+    <% } %>
+  </div>
+
+  <% if (feed.length) { %>
+  <div class="row g-4">
+    <% feed.forEach((resource) => { %>
+    <div class="col-md-6">
+      <div class="card resource-card h-100 shadow-sm border-0">
+        <% if (resource.image_path) { %>
+        <img
+          src="/uploads/<%= resource.image_path %>"
+          class="card-img-top"
+          alt="Thumbnail for <%= resource.title %>"
+          style="max-height: 220px; object-fit: cover;"
+        />
+        <% } %>
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h5 class="card-title mb-1"><%= resource.title %></h5>
+              <small class="text-muted">
+                Posted by <%= resource.full_name %> (<a href="/u/<%= resource.username %>">@<%= resource.username %></a>)
+                • <%= new Date(resource.created_at).toLocaleDateString() %>
+              </small>
+            </div>
+            <span class="badge <%= resource.type === 'FILE' ? 'bg-info text-dark' : 'bg-success' %>">
+              <%= resource.type %>
+            </span>
+          </div>
+          <p class="card-text flex-grow-1"><%= resource.description || 'No description provided.' %></p>
+          <ul class="list-inline small text-muted mb-3">
+            <li class="list-inline-item">
+              Domain: <%= resource.domain_name || 'Uncategorized' %>
+            </li>
+            <% if (resource.purpose) { %>
+            <li class="list-inline-item">
+              • Purpose: <%= resource.purpose %>
+            </li>
+            <% } %>
+            <li class="list-inline-item">
+              • Trust: <strong><%= resource.trust_score || 0 %></strong>
+            </li>
+          </ul>
+          <div class="mt-auto d-flex flex-wrap gap-2">
+            <% if (resource.type === 'FILE' && resource.file_path) { %>
+            <a href="/uploads/<%= resource.file_path %>" target="_blank" class="btn btn-outline-secondary btn-sm">
+              Download file
+            </a>
+            <% } %>
+            <% if (resource.type === 'LINK' && resource.url) { %>
+            <a href="<%= resource.url %>" target="_blank" class="btn btn-outline-secondary btn-sm">
+              Open link
+            </a>
+            <% } %>
+            <a href="/resources/<%= resource.id %>" class="btn btn-primary btn-sm">
+              View details
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <div class="text-center py-5">
+    <p class="text-muted">No public resources match your filters yet. Try relaxing your search.</p>
+  </div>
+  <% } %>
 </div>
 <%- include('partials/footer') %>
 
