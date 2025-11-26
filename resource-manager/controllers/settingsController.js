@@ -53,7 +53,8 @@ function updateProfileSettings(req, res) {
     const currentUser = userModel.findById(userId);
     if (currentUser && currentUser.avatar_path) {
       // Remove old avatar file
-      const oldAvatarPath = path.join(__dirname, '..', 'uploads', 'avatars', currentUser.avatar_path);
+      const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
+      const oldAvatarPath = path.join(uploadsDir, 'avatars', currentUser.avatar_path);
       if (fs.existsSync(oldAvatarPath)) {
         try {
           fs.unlinkSync(oldAvatarPath);

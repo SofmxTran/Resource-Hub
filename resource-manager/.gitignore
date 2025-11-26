@@ -3,4 +3,6 @@
 uploads
 *.db
 package-lock.json
+backups/*.db
+!backups/.gitkeep
 

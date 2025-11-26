@@ -1,8 +1,20 @@
 ﻿const path = require('path');
 const Database = require('better-sqlite3');
 
-const dbPath =
-  process.env.DATABASE_PATH || path.join(__dirname, 'resource-manager.db');
+// Ensure data directory exists for persistent storage (important for Render)
+const defaultDbPath = path.join(__dirname, 'resource-manager.db');
+const customDbPath = process.env.DATABASE_PATH;
+
+// If using custom path, ensure directory exists
+if (customDbPath && customDbPath !== defaultDbPath) {
+  const dbDir = path.dirname(customDbPath);
+  const fs = require('fs');
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+}
+
+const dbPath = customDbPath || defaultDbPath;
 
 const db = new Database(dbPath);
 

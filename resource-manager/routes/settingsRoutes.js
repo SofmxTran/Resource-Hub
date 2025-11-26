@@ -8,7 +8,8 @@ const { ensureAuthenticated } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // Create avatars directory if it doesn't exist
-const avatarDir = path.join(__dirname, '..', 'uploads', 'avatars');
+const baseUploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
+const avatarDir = path.join(baseUploadsDir, 'avatars');
 if (!fs.existsSync(avatarDir)) {
   fs.mkdirSync(avatarDir, { recursive: true });
 }

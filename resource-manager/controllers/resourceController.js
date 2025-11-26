@@ -7,7 +7,8 @@ const voteModel = require('../models/voteModel');
 
 function cleanupFile(filePath) {
   if (!filePath) return;
-  const fullPath = path.join(__dirname, '..', 'uploads', filePath);
+  const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
+  const fullPath = path.join(uploadsDir, filePath);
   if (fs.existsSync(fullPath)) {
     fs.unlinkSync(fullPath);
   }

@@ -7,7 +7,7 @@ const {
   ensureAuthenticated,
 } = require('../middleware/authMiddleware');
 
-const uploadDir = path.join(__dirname, '..', 'uploads');
+const uploadDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

@@ -162,16 +162,40 @@ git push -u origin main
 
 ## Deploying (Render example)
 
+### Quick Deploy
+
 1. Push the repo to GitHub.
 2. In Render, create a new **Web Service** connected to that repo.
 3. Configure:
    - Build command: `npm install`
    - Start command: `npm start`
 4. Environment variables:
-   - `SESSION_SECRET` – long random string.
-   - `DATABASE_PATH` – e.g. `./data/resource-manager.db`.
+   - `SESSION_SECRET` – long random string (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
+   - `DATABASE_PATH` – e.g. `/opt/render/project/src/data/resource-manager.db` (use persistent disk).
    - `NODE_ENV` – `production`.
-5. Deploy. Render sets `PORT`, which the app already honors (`process.env.PORT || 3000`).
+5. Add Persistent Disk in Render Settings:
+   - Name: `data`
+   - Mount Path: `/opt/render/project/src/data`
+   - Size: 1GB or more
+6. Deploy. Render sets `PORT`, which the app already honors (`process.env.PORT || 3000`).
+
+### Deploy với Database hiện tại
+
+**QUAN TRỌNG**: Nếu bạn muốn giữ nguyên database và tài khoản admin hiện tại:
+
+1. **Backup database trước khi deploy:**
+   ```bash
+   npm run backup-db
+   ```
+
+2. **Upload database backup lên Render persistent disk** sau khi deploy lần đầu (xem `DEPLOY.md` để biết chi tiết).
+
+3. **Tạo thư mục uploads trên persistent disk:**
+   ```bash
+   mkdir -p /opt/render/project/src/data/uploads/avatars
+   ```
+
+Xem file **`DEPLOY.md`** để có hướng dẫn chi tiết về cách deploy và giữ nguyên database.
 
 Railway/Heroku or any Node-friendly platform follow the same pattern: install dependencies and run `npm start` with the same env vars.
 
