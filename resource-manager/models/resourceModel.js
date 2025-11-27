@@ -21,7 +21,30 @@ async function getTrustScore(resourceId) {
 
 // Helper to add trust score to resources
 async function addTrustScoresToResources(resources) {
-  const resourceIds = resources.map((r) => r._id || r.id);
+  if (!resources || resources.length === 0) {
+    return [];
+  }
+  
+  const resourceIds = resources
+    .map((r) => {
+      if (r._id) return r._id;
+      if (r.id) return toObjectId(r.id);
+      return null;
+    })
+    .filter(id => id !== null);
+  
+  if (resourceIds.length === 0) {
+    return resources.map((r) => {
+      const id = (r._id || r.id || r._id?.toString() || r.id?.toString() || '').toString();
+      const resourceObj = r.toObject ? r.toObject() : (typeof r === 'object' ? r : {});
+      return {
+        ...resourceObj,
+        id: id,
+        trust_score: 0,
+      };
+    });
+  }
+  
   const votes = await ResourceVote.aggregate([
     { $match: { resourceId: { $in: resourceIds } } },
     { $group: { _id: '$resourceId', trustScore: { $sum: '$value' } } },
@@ -32,9 +55,10 @@ async function addTrustScoresToResources(resources) {
   });
 
   return resources.map((r) => {
-    const id = (r._id || r.id).toString();
+    const id = (r._id || r.id || r._id?.toString() || r.id?.toString() || '').toString();
+    const resourceObj = r.toObject ? r.toObject() : (typeof r === 'object' ? r : {});
     return {
-      ...r.toObject ? r.toObject() : r,
+      ...resourceObj,
       id: id,
       trust_score: voteMap[id] || 0,
     };
@@ -105,13 +129,68 @@ function buildPublicFilters(filters = {}) {
 }
 
 async function getAllResources(userId, filters = {}) {
-  const match = buildFilters(userId, filters);
-  const resources = await Resource.find(match)
-    .populate('domainId', 'name')
-    .sort({ createdAt: -1 })
-    .lean();
+  try {
+    const match = buildFilters(userId, filters);
+    const resources = await Resource.find(match)
+      .populate('domainId', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
 
-  return await addTrustScoresToResources(resources);
+    const resourcesWithScores = await addTrustScoresToResources(resources);
+    
+    // Transform to match expected format with snake_case fields for backward compatibility
+    return resourcesWithScores.map((r) => {
+      // Handle domainId - it could be an object (from populate), null, or an ObjectId
+      let domainName = 'Uncategorized';
+      let domainId = null;
+      
+      if (r.domainId) {
+        if (typeof r.domainId === 'object') {
+          // Check if it's a populated domain object
+          if (r.domainId.name) {
+            // Populated domain with name
+            domainName = r.domainId.name;
+            domainId = r.domainId._id?.toString() || (r.domainId._id ? r.domainId._id.toString() : null);
+          } else if (r.domainId.toString) {
+            // Just an ObjectId (not populated)
+            domainId = r.domainId.toString();
+          }
+        } else if (typeof r.domainId === 'string') {
+          // String ID
+          domainId = r.domainId;
+        }
+      }
+      
+      // If domainId exists but domainName is still 'Uncategorized', try to get it from r.domain_name
+      if (domainId && domainName === 'Uncategorized' && r.domain_name) {
+        domainName = r.domain_name;
+      }
+      
+      return {
+        ...r,
+        id: r.id || r._id?.toString() || r._id || '',
+        user_id: r.userId?.toString() || r.user_id,
+        domain_id: domainId || r.domain_id,
+        domain_name: domainName || r.domain_name || 'Uncategorized',
+        file_path: r.filePath || r.file_path || null,
+        image_path: r.imagePath || r.image_path || null,
+        url: r.url || null,
+        title: r.title || '',
+        description: r.description || '',
+        type: r.type || '',
+        purpose: r.purpose || '',
+        status: r.status || 'PENDING',
+        is_public: r.isPublic !== undefined ? r.isPublic : (r.is_public !== undefined ? r.is_public : false),
+        is_favorite: r.isFavorite !== undefined ? r.isFavorite : (r.is_favorite !== undefined ? r.is_favorite : false),
+        trust_score: r.trust_score || 0,
+        created_at: r.createdAt || r.created_at,
+        updated_at: r.updatedAt || r.updated_at,
+      };
+    });
+  } catch (error) {
+    console.error('Error in getAllResources:', error);
+    throw error;
+  }
 }
 
 async function getResourceById(id, userId) {

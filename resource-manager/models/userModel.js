@@ -29,9 +29,9 @@ async function findByEmail(email) {
     password_hash: user.passwordHash,
     is_admin: user.isAdmin ? 1 : 0,
     display_name: user.displayName,
-    avatar_path: user.avatarPath,
-    bio: user.bio,
-    website: user.website,
+    avatar_path: user.avatarPath || null,
+    bio: user.bio || null,
+    website: user.website || null,
     created_at: user.createdAt,
   };
 }
@@ -47,9 +47,9 @@ async function findByUsername(username) {
     password_hash: user.passwordHash,
     is_admin: user.isAdmin ? 1 : 0,
     display_name: user.displayName,
-    avatar_path: user.avatarPath,
-    bio: user.bio,
-    website: user.website,
+    avatar_path: user.avatarPath || null,
+    bio: user.bio || null,
+    website: user.website || null,
     created_at: user.createdAt,
   };
 }
@@ -65,9 +65,9 @@ async function findById(id) {
     password_hash: user.passwordHash,
     is_admin: user.isAdmin ? 1 : 0,
     display_name: user.displayName,
-    avatar_path: user.avatarPath,
-    bio: user.bio,
-    website: user.website,
+    avatar_path: user.avatarPath || null,
+    bio: user.bio || null,
+    website: user.website || null,
     created_at: user.createdAt,
   };
 }

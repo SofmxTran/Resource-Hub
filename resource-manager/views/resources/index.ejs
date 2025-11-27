@@ -102,34 +102,36 @@
     <div class="card-body">
       <% if (resources.length) { %>
       <div class="table-responsive">
-        <table class="table align-middle">
+        <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Domain</th>
-              <th>Purpose</th>
-              <th>Type</th>
-              <th>Trust</th>
-              <th>Visibility</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th style="min-width: 200px;">Title</th>
+              <th style="min-width: 120px;">Domain</th>
+              <th style="min-width: 100px;">Purpose</th>
+              <th style="min-width: 80px;">Type</th>
+              <th style="min-width: 60px; text-align: center;">Trust</th>
+              <th style="min-width: 100px;">Visibility</th>
+              <th style="min-width: 100px;">Status</th>
+              <th style="min-width: 200px; text-align: right;">Actions</th>
             </tr>
           </thead>
           <tbody>
             <% resources.forEach((res) => { %>
             <tr>
               <td>
-                <strong><a href="/resources/<%= res.id %>" class="text-decoration-none"><%= res.title %></a></strong>
-                <p class="mb-0 small text-muted"><%= res.description || '' %></p>
+                <strong><a href="/resources/<%= res.id || res._id %>" class="text-decoration-none"><%= res.title || 'Untitled' %></a></strong>
+                <% if (res.description) { %>
+                <p class="mb-0 small text-muted"><%= res.description %></p>
+                <% } %>
               </td>
               <td><%= res.domain_name || 'Uncategorized' %></td>
               <td><%= res.purpose || '-' %></td>
               <td>
                 <span class="badge <%= res.type === 'FILE' ? 'bg-info text-dark' : 'bg-success' %>">
-                  <%= res.type %>
+                  <%= res.type || 'LINK' %>
                 </span>
               </td>
-              <td><strong><%= res.trust_score || 0 %></strong></td>
+              <td style="text-align: center;"><strong><%= res.trust_score || 0 %></strong></td>
               <td>
                 <span class="badge <%= res.is_public ? 'bg-success' : 'bg-secondary' %>">
                   <%= res.is_public ? 'Public' : 'Private' %>
@@ -137,46 +139,44 @@
               </td>
               <td>
                 <span class="badge <%= res.status === 'APPROVED' ? 'bg-success' : res.status === 'PENDING' ? 'bg-warning text-dark' : 'bg-danger' %>">
-                  <%= res.status %>
+                  <%= res.status || 'PENDING' %>
                 </span>
               </td>
-              <td class="text-end">
+              <td class="text-end" style="white-space: nowrap;">
                 <% if (res.type === 'FILE' && res.file_path) { %>
                 <a
-                  class="btn btn-sm btn-outline-secondary"
-                  href="/uploads/<%= res.file_path %>"
+                  class="btn btn-sm btn-outline-secondary me-1"
+                  href="<%= res.file_path && res.file_path.includes('cloudinary.com') ? res.file_path : '/uploads/' + res.file_path %>"
                   target="_blank"
-                  >Download</a
-                >
+                  title="Download"
+                >Download</a>
                 <% } %>
                 <% if (res.type === 'LINK' && res.url) { %>
                 <a
-                  class="btn btn-sm btn-outline-secondary"
+                  class="btn btn-sm btn-outline-secondary me-1"
                   href="<%= res.url %>"
                   target="_blank"
-                  >Visit</a
-                >
+                  title="Visit"
+                >Visit</a>
                 <% } %>
-                <a class="btn btn-sm btn-outline-dark" href="/resources/<%= res.id %>">View</a>
-                <a class="btn btn-sm btn-outline-primary" href="/resources/<%= res.id %>/edit"
-                  >Edit</a
-                >
+                <a class="btn btn-sm btn-outline-dark me-1" href="/resources/<%= res.id || res._id %>" title="View">View</a>
+                <a class="btn btn-sm btn-outline-primary me-1" href="/resources/<%= res.id || res._id %>/edit" title="Edit">Edit</a>
                 <form
-                  action="/resources/<%= res.id %>/favorite"
+                  action="/resources/<%= res.id || res._id %>/favorite"
                   method="POST"
-                  class="d-inline"
+                  class="d-inline me-1"
                 >
-                  <button class="btn btn-sm <%= res.is_favorite ? 'btn-warning' : 'btn-outline-warning' %>">
+                  <button type="submit" class="btn btn-sm <%= res.is_favorite ? 'btn-warning' : 'btn-outline-warning' %>" title="<%= res.is_favorite ? 'Remove from favorites' : 'Add to favorites' %>">
                     <%= res.is_favorite ? '★' : '☆' %>
                   </button>
                 </form>
                 <form
-                  action="/resources/<%= res.id %>/delete"
+                  action="/resources/<%= res.id || res._id %>/delete"
                   method="POST"
                   class="d-inline"
                   onsubmit="return confirm('Delete this resource?')"
                 >
-                  <button class="btn btn-sm btn-outline-danger">Delete</button>
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">Delete</button>
                 </form>
               </td>
             </tr>

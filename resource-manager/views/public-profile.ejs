@@ -8,7 +8,7 @@
         <div class="col-auto text-center">
           <% if (profileUser.avatar_path) { %>
           <img 
-            src="/uploads/avatars/<%= profileUser.avatar_path %>" 
+            src="<%= profileUser.avatar_path.includes('cloudinary.com') ? profileUser.avatar_path : '/uploads/avatars/' + profileUser.avatar_path %>" 
             alt="Avatar" 
             class="rounded-circle"
             style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--primary); box-shadow: var(--shadow-glow);"
@@ -98,7 +98,7 @@
         <% if (resource.image_path) { %>
         <a href="/resources/<%= resource.id %>">
           <img
-            src="/uploads/<%= resource.image_path %>"
+            src="<%= resource.image_path && resource.image_path.includes('cloudinary.com') ? resource.image_path : '/uploads/' + (resource.image_path || '') %>"
             class="card-img-top"
             alt="Thumbnail for <%= resource.title %>"
             style="max-height: 220px; object-fit: cover; border-radius: 16px 16px 0 0; cursor: pointer;"
@@ -135,7 +135,7 @@
           </div>
           <div class="mt-auto d-flex flex-wrap gap-2">
             <% if (resource.type === 'FILE' && resource.file_path) { %>
-            <a href="/uploads/<%= resource.file_path %>" target="_blank" class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation();">
+            <a href="<%= resource.file_path && resource.file_path.includes('cloudinary.com') ? resource.file_path : '/uploads/' + (resource.file_path || '') %>" target="_blank" class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation();">
               <i class="fas fa-download me-1"></i>Download File
             </a>
             <% } %>

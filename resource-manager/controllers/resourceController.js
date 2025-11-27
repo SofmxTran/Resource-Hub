@@ -52,33 +52,56 @@ function canViewResource(resource, user) {
 }
 
 async function listResources(req, res) {
-  const filters = {
-    domain: req.query.domain || 'all',
-    type: (req.query.type || '').toUpperCase() || 'all',
-    purpose: req.query.purpose || 'all',
-    favorite: req.query.favorite || '0',
-    status: req.query.status || 'ALL',
-    q: req.query.q || '',
-  };
-  if (!['FILE', 'LINK'].includes(filters.type)) {
-    filters.type = 'all';
-  }
-  // Normalize status: 'ALL' means show all, otherwise must be valid status
-  filters.status = (filters.status || 'ALL').toUpperCase();
-  if (!['PENDING', 'APPROVED', 'REJECTED', 'ALL'].includes(filters.status)) {
-    filters.status = 'ALL';
-  }
+  try {
+    const filters = {
+      domain: req.query.domain || 'all',
+      type: (req.query.type || '').toUpperCase() || 'all',
+      purpose: req.query.purpose || 'all',
+      favorite: req.query.favorite || '0',
+      status: req.query.status || 'ALL',
+      q: req.query.q || '',
+    };
+    if (!['FILE', 'LINK'].includes(filters.type)) {
+      filters.type = 'all';
+    }
+    // Normalize status: 'ALL' means show all, otherwise must be valid status
+    filters.status = (filters.status || 'ALL').toUpperCase();
+    if (!['PENDING', 'APPROVED', 'REJECTED', 'ALL'].includes(filters.status)) {
+      filters.status = 'ALL';
+    }
 
-  const resources = await resourceModel.getAllResources(req.session.user.id, filters);
-  const domains = await domainModel.getAllDomains();
+    const resources = await resourceModel.getAllResources(req.session.user.id, filters);
+    const domains = await domainModel.getAllDomains();
 
-  res.render('resources/index', {
-    title: 'My Resources',
-    resources,
-    domains,
-    filters,
-    activeNav: 'resources',
-  });
+    // Debug logging
+    console.log('=== Resources List Debug ===');
+    console.log('Resources count:', resources.length);
+    if (resources.length > 0) {
+      resources.forEach((res, idx) => {
+        console.log(`Resource ${idx + 1}:`, {
+          id: res.id,
+          title: res.title,
+          type: res.type,
+          domain_name: res.domain_name,
+          domain_id: res.domain_id,
+          purpose: res.purpose,
+          status: res.status,
+        });
+      });
+    }
+
+    res.render('resources/index', {
+      title: 'My Resources',
+      resources,
+      domains,
+      filters,
+      activeNav: 'resources',
+    });
+  } catch (error) {
+    console.error('Error in listResources:', error);
+    req.session.error = 'Failed to load resources. Please try again.';
+    res.redirect('/dashboard');
+  }
 }
 
 async function renderNewResource(req, res) {
@@ -124,6 +147,10 @@ async function createResource(req, res) {
 
   try {
     if (fileUpload) {
+      if (!fileUpload.buffer) {
+        throw new Error('File buffer is missing. Make sure multer is using memory storage.');
+      }
+      console.log(`Uploading file to Cloudinary: ${fileUpload.originalname} (${fileUpload.size} bytes)`);
       const uploadResult = await uploadToCloudinary(
         fileUpload.buffer,
         'resources/files',
@@ -133,6 +160,10 @@ async function createResource(req, res) {
     }
 
     if (imageUpload) {
+      if (!imageUpload.buffer) {
+        throw new Error('Image buffer is missing. Make sure multer is using memory storage.');
+      }
+      console.log(`Uploading image to Cloudinary: ${imageUpload.originalname} (${imageUpload.size} bytes)`);
       const uploadResult = await uploadToCloudinary(
         imageUpload.buffer,
         'resources/images',
@@ -142,7 +173,12 @@ async function createResource(req, res) {
     }
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
-    req.session.error = 'Failed to upload file. Please try again.';
+    console.error('Error details:', {
+      message: error.message,
+      http_code: error.http_code,
+      name: error.name,
+    });
+    req.session.error = `Failed to upload file: ${error.message || 'Unknown error'}. Please try again.`;
     return res.redirect('/resources/new');
   }
 
@@ -258,7 +294,12 @@ async function updateResourceHandler(req, res) {
     }
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
-    req.session.error = 'Failed to upload file. Please try again.';
+    console.error('Error details:', {
+      message: error.message,
+      http_code: error.http_code,
+      name: error.name,
+    });
+    req.session.error = `Failed to upload file: ${error.message || 'Unknown error'}. Please try again.`;
     return res.redirect(`/resources/${req.params.id}/edit`);
   }
 

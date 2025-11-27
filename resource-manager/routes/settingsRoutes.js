@@ -26,6 +26,21 @@ router.post(
   '/profile',
   ensureAuthenticated,
   avatarUpload.single('avatar'),
+  (req, res, next) => {
+    // Debug middleware to check if file was received
+    if (req.file) {
+      console.log('✅ File received by multer:', {
+        fieldname: req.file.fieldname,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        hasBuffer: !!req.file.buffer,
+      });
+    } else {
+      console.log('⚠️  No file received in multer middleware');
+    }
+    next();
+  },
   settingsController.updateProfileSettings
 );
 

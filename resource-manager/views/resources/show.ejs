@@ -7,7 +7,7 @@
       <div class="card mb-4" data-aos="fade-up">
         <% if (resource.image_path) { %>
         <img
-          src="/uploads/<%= resource.image_path %>"
+          src="<%= resource.image_path.includes('cloudinary.com') ? resource.image_path : '/uploads/' + resource.image_path %>"
           alt="Thumbnail"
           class="card-img-top"
           style="max-height: 300px; object-fit: cover; border-radius: 16px 16px 0 0;"
@@ -28,7 +28,7 @@
           <h2 class="mb-2"><%= resource.title %></h2>
           <div class="user-display mb-3">
             <% if (resource.avatar_path) { %>
-            <img src="/uploads/avatars/<%= resource.avatar_path %>" alt="Avatar" class="avatar" />
+            <img src="<%= resource.avatar_path.includes('cloudinary.com') ? resource.avatar_path : '/uploads/avatars/' + resource.avatar_path %>" alt="Avatar" class="avatar" />
             <% } else { %>
             <div class="avatar-placeholder">
               <%= (resource.display_name || resource.full_name || resource.username).charAt(0).toUpperCase() %>
@@ -68,7 +68,7 @@
           <% } %>
           <div class="d-flex flex-wrap gap-2">
             <% if (resource.type === 'FILE' && resource.file_path) { %>
-            <a class="btn btn-primary" href="/uploads/<%= resource.file_path %>" target="_blank">
+            <a class="btn btn-primary" href="<%= resource.file_path && resource.file_path.includes('cloudinary.com') ? resource.file_path : '/uploads/' + (resource.file_path || '') %>" target="_blank">
               <i class="fas fa-download me-1"></i>Download File
             </a>
             <% } %>
@@ -161,7 +161,7 @@
               <div class="d-flex justify-content-between mb-2">
                 <div class="user-display">
                   <% if (comment.avatar_path) { %>
-                  <img src="/uploads/avatars/<%= comment.avatar_path %>" alt="Avatar" class="avatar avatar-sm" />
+                  <img src="<%= comment.avatar_path.includes('cloudinary.com') ? comment.avatar_path : '/uploads/avatars/' + comment.avatar_path %>" alt="Avatar" class="avatar avatar-sm" />
                   <% } else { %>
                   <div class="avatar-placeholder avatar-placeholder-sm">
                     <%= (comment.display_name || comment.full_name || comment.username).charAt(0).toUpperCase() %>
