@@ -1,25 +1,45 @@
-const db = require('../db/database');
+const mongoose = require('mongoose');
+const ResourceVote = require('./ResourceVote');
 
-function getVote(resourceId, userId) {
-  const stmt = db.prepare(
-    `SELECT * FROM resource_votes WHERE resource_id = ? AND user_id = ?`
-  );
-  return stmt.get(resourceId, userId);
+function toObjectId(id) {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return typeof id === 'string' ? new mongoose.Types.ObjectId(id) : id;
+  }
+  return id;
 }
 
-function addVote(resourceId, userId) {
-  const stmt = db.prepare(
-    `INSERT INTO resource_votes (resource_id, user_id, value)
-     VALUES (?, ?, 1)`
-  );
-  return stmt.run(resourceId, userId);
+async function getVote(resourceId, userId) {
+  const vote = await ResourceVote.findOne({
+    resourceId: toObjectId(resourceId),
+    userId: toObjectId(userId),
+  });
+  return vote ? vote.toObject() : null;
 }
 
-function removeVote(resourceId, userId) {
-  const stmt = db.prepare(
-    `DELETE FROM resource_votes WHERE resource_id = ? AND user_id = ?`
-  );
-  return stmt.run(resourceId, userId);
+async function addVote(resourceId, userId) {
+  try {
+    const vote = new ResourceVote({
+      resourceId: toObjectId(resourceId),
+      userId: toObjectId(userId),
+      value: 1,
+    });
+    await vote.save();
+    return { changes: 1 };
+  } catch (error) {
+    // If duplicate vote (unique index violation), return 0 changes
+    if (error.code === 11000) {
+      return { changes: 0 };
+    }
+    throw error;
+  }
+}
+
+async function removeVote(resourceId, userId) {
+  const result = await ResourceVote.deleteOne({
+    resourceId: toObjectId(resourceId),
+    userId: toObjectId(userId),
+  });
+  return { changes: result.deletedCount };
 }
 
 module.exports = {
@@ -27,4 +47,3 @@ module.exports = {
   addVote,
   removeVote,
 };
-

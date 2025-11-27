@@ -1,7 +1,7 @@
 const userModel = require('../models/userModel');
 
-function showLeaderboard(req, res) {
-  const leaderboard = userModel.getLeaderboard(20);
+async function showLeaderboard(req, res) {
+  const leaderboard = await userModel.getLeaderboard(20);
   
   // Calculate ranking scores for display
   const leaderboardWithScores = leaderboard.map((user, index) => {

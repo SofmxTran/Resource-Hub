@@ -1,16 +1,16 @@
 const userModel = require('../models/userModel');
 const resourceModel = require('../models/resourceModel');
 
-function showProfile(req, res) {
+async function showProfile(req, res) {
   const userId = req.session.user.id;
-  const user = userModel.findById(userId);
+  const user = await userModel.findById(userId);
   if (!user) {
     req.session.error = 'Unable to load profile.';
     return res.redirect('/login');
   }
-  const resources = resourceModel.getResourcesForUser(userId);
-  const visibilityStats = resourceModel.getUserVisibilityStats(userId);
-  const userStats = userModel.getUserStats(userId);
+  const resources = await resourceModel.getResourcesForUser(userId);
+  const visibilityStats = await resourceModel.getUserVisibilityStats(userId);
+  const userStats = await userModel.getUserStats(userId);
 
   res.render('profile', {
     title: 'My Profile',
@@ -22,16 +22,16 @@ function showProfile(req, res) {
   });
 }
 
-function showPublicProfile(req, res) {
+async function showPublicProfile(req, res) {
   const username = (req.params.username || '').trim().toLowerCase();
-  const profileUser = userModel.findByUsername(username);
+  const profileUser = await userModel.findByUsername(username);
 
   if (!profileUser) {
     return res.status(404).render('404', { title: 'User Not Found', activeNav: null });
   }
 
-  const resources = resourceModel.getPublicResourcesByUser(profileUser.id);
-  const userStats = userModel.getUserStats(profileUser.id);
+  const resources = await resourceModel.getPublicResourcesByUser(profileUser.id);
+  const userStats = await userModel.getUserStats(profileUser.id);
 
   res.render('public-profile', {
     title: `${profileUser.display_name || profileUser.username} - Public Profile`,

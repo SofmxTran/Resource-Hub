@@ -39,15 +39,15 @@ function determineStatus({ isPublic, isAdmin, previousStatus, wasPublic }) {
 
 function canViewResource(resource, user) {
   if (!resource) return false;
-  if (resource.is_public && resource.status === 'APPROVED') {
+  if (resource.isPublic && resource.status === 'APPROVED') {
     return true;
   }
   if (!user) return false;
   if (user.isAdmin) return true;
-  return user.id === resource.user_id;
+  return user.id === resource.userId?.toString() || user.id === resource.user_id;
 }
 
-function listResources(req, res) {
+async function listResources(req, res) {
   const filters = {
     domain: req.query.domain || 'all',
     type: (req.query.type || '').toUpperCase() || 'all',
@@ -65,8 +65,8 @@ function listResources(req, res) {
     filters.status = 'ALL';
   }
 
-  const resources = resourceModel.getAllResources(req.session.user.id, filters);
-  const domains = domainModel.getAllDomains();
+  const resources = await resourceModel.getAllResources(req.session.user.id, filters);
+  const domains = await domainModel.getAllDomains();
 
   res.render('resources/index', {
     title: 'My Resources',
@@ -77,8 +77,8 @@ function listResources(req, res) {
   });
 }
 
-function renderNewResource(req, res) {
-  const domains = domainModel.getAllDomains();
+async function renderNewResource(req, res) {
+  const domains = await domainModel.getAllDomains();
   res.render('resources/new', { 
     title: 'New Resource', 
     domains,
@@ -86,7 +86,7 @@ function renderNewResource(req, res) {
   });
 }
 
-function createResource(req, res) {
+async function createResource(req, res) {
   const { title, description, domainId, type, url, purpose, guideText, isPublic } =
     req.body;
   const { fileUpload, imageUpload } = getUploadedFiles(req);
@@ -121,7 +121,7 @@ function createResource(req, res) {
     wasPublic: false,
   });
 
-  resourceModel.createResource({
+  await resourceModel.createResource({
     userId: req.session.user.id,
     domainId,
     title: cleanTitle,
@@ -142,8 +142,8 @@ function createResource(req, res) {
   return res.redirect('/resources');
 }
 
-function renderEditResource(req, res) {
-  const resource = resourceModel.getResourceById(
+async function renderEditResource(req, res) {
+  const resource = await resourceModel.getResourceById(
     req.params.id,
     req.session.user.id
   );
@@ -151,7 +151,7 @@ function renderEditResource(req, res) {
     req.session.error = 'Resource not found.';
     return res.redirect('/resources');
   }
-  const domains = domainModel.getAllDomains();
+  const domains = await domainModel.getAllDomains();
   res.render('resources/edit', {
     title: `Edit ${resource.title}`,
     resource,
@@ -160,10 +160,10 @@ function renderEditResource(req, res) {
   });
 }
 
-function updateResourceHandler(req, res) {
+async function updateResourceHandler(req, res) {
   const { title, description, domainId, type, url, purpose, guideText, isPublic } =
     req.body;
-  const resource = resourceModel.getResourceById(
+  const resource = await resourceModel.getResourceById(
     req.params.id,
     req.session.user.id
   );
@@ -177,8 +177,8 @@ function updateResourceHandler(req, res) {
   const cleanPurpose = (purpose || '').trim() || null;
   const cleanGuide = (guideText || '').trim() || null;
   const { fileUpload, imageUpload } = getUploadedFiles(req);
-  let filePath = resource.file_path;
-  let imagePath = resource.image_path;
+  let filePath = resource.filePath || resource.file_path;
+  let imagePath = resource.imagePath || resource.image_path;
   const cleanType = type === 'FILE' ? 'FILE' : 'LINK';
   const cleanUrl = (url || '').trim();
   const publicFlag = isPublic === 'on';
@@ -190,15 +190,15 @@ function updateResourceHandler(req, res) {
   }
 
   if (cleanType === 'FILE' && fileUpload) {
-    cleanupFile(resource.file_path);
+    cleanupFile(resource.filePath || resource.file_path);
     filePath = fileUpload.filename;
   } else if (cleanType === 'LINK') {
-    cleanupFile(resource.file_path);
+    cleanupFile(resource.filePath || resource.file_path);
     filePath = null;
   }
 
   if (imageUpload) {
-    cleanupFile(resource.image_path);
+    cleanupFile(resource.imagePath || resource.image_path);
     imagePath = imageUpload.filename;
   }
 
@@ -211,10 +211,10 @@ function updateResourceHandler(req, res) {
     isPublic: publicFlag,
     isAdmin,
     previousStatus: resource.status,
-    wasPublic: !!resource.is_public,
+    wasPublic: !!(resource.isPublic || resource.is_public),
   });
 
-  resourceModel.updateResource(req.params.id, req.session.user.id, {
+  await resourceModel.updateResource(req.params.id, req.session.user.id, {
     domainId,
     title: cleanTitle,
     description: cleanDescription || null,
@@ -232,8 +232,8 @@ function updateResourceHandler(req, res) {
   return res.redirect('/resources');
 }
 
-function deleteResourceHandler(req, res) {
-  const resource = resourceModel.getResourceById(
+async function deleteResourceHandler(req, res) {
+  const resource = await resourceModel.getResourceById(
     req.params.id,
     req.session.user.id
   );
@@ -242,15 +242,15 @@ function deleteResourceHandler(req, res) {
     return res.redirect('/resources');
   }
 
-  cleanupFile(resource.file_path);
-  cleanupFile(resource.image_path);
-  resourceModel.deleteResource(req.params.id, req.session.user.id);
+  cleanupFile(resource.filePath || resource.file_path);
+  cleanupFile(resource.imagePath || resource.image_path);
+  await resourceModel.deleteResource(req.params.id, req.session.user.id);
   req.session.success = 'Resource deleted.';
   return res.redirect('/resources');
 }
 
-function toggleFavoriteHandler(req, res) {
-  const resource = resourceModel.getResourceById(
+async function toggleFavoriteHandler(req, res) {
+  const resource = await resourceModel.getResourceById(
     req.params.id,
     req.session.user.id
   );
@@ -259,21 +259,21 @@ function toggleFavoriteHandler(req, res) {
     return res.redirect('/resources');
   }
 
-  const newValue = resource.is_favorite ? 0 : 1;
-  resourceModel.toggleFavorite(req.params.id, req.session.user.id, newValue);
+  const newValue = !(resource.isFavorite || resource.is_favorite);
+  await resourceModel.toggleFavorite(req.params.id, req.session.user.id, newValue);
   return res.redirect('/resources');
 }
 
-function showResourceDetail(req, res) {
-  const resource = resourceModel.getResourceForDetail(req.params.id);
+async function showResourceDetail(req, res) {
+  const resource = await resourceModel.getResourceForDetail(req.params.id);
   if (!canViewResource(resource, req.session.user)) {
     req.session.error = 'Resource not found or not accessible.';
     return res.redirect('/');
   }
-  const comments = commentModel.getCommentsForResource(resource.id);
+  const comments = await commentModel.getCommentsForResource(resource.id);
   const userVote =
     req.session.user && req.session.user.id
-      ? voteModel.getVote(resource.id, req.session.user.id)
+      ? await voteModel.getVote(resource.id, req.session.user.id)
       : null;
   const isAdmin = req.session.user && req.session.user.isAdmin;
 
@@ -287,7 +287,7 @@ function showResourceDetail(req, res) {
   });
 }
 
-function addComment(req, res) {
+async function addComment(req, res) {
   const content = (req.body.content || '').trim();
   let rating = null;
   if (req.body.rating) {
@@ -298,7 +298,7 @@ function addComment(req, res) {
     }
     rating = parsed;
   }
-  const resource = resourceModel.getResourceForDetail(req.params.id);
+  const resource = await resourceModel.getResourceForDetail(req.params.id);
   if (!canViewResource(resource, req.session.user)) {
     req.session.error = 'Cannot comment on that resource.';
     return res.redirect('/');
@@ -307,7 +307,7 @@ function addComment(req, res) {
     req.session.error = 'Comment cannot be empty.';
     return res.redirect(`/resources/${resource.id}`);
   }
-  commentModel.createComment({
+  await commentModel.createComment({
     resourceId: resource.id,
     userId: req.session.user.id,
     content,
@@ -317,7 +317,7 @@ function addComment(req, res) {
   return res.redirect(`/resources/${resource.id}`);
 }
 
-function deleteComment(req, res) {
+async function deleteComment(req, res) {
   const commentId = req.params.commentId;
   const resourceId = req.params.id;
   const user = req.session.user;
@@ -325,7 +325,7 @@ function deleteComment(req, res) {
     req.session.error = 'You must be logged in.';
     return res.redirect(`/resources/${resourceId}`);
   }
-  const result = commentModel.deleteComment(commentId, resourceId, user.id, user.isAdmin);
+  const result = await commentModel.deleteComment(commentId, resourceId, user.id, user.isAdmin);
   if (result.changes) {
     req.session.success = 'Comment deleted.';
   } else {
@@ -334,23 +334,24 @@ function deleteComment(req, res) {
   return res.redirect(`/resources/${resourceId}`);
 }
 
-function submitTrustVote(req, res) {
-  const resource = resourceModel.getResourceForDetail(req.params.id);
+async function submitTrustVote(req, res) {
+  const resource = await resourceModel.getResourceForDetail(req.params.id);
   if (!canViewResource(resource, req.session.user)) {
     req.session.error = 'Resource not accessible.';
     return res.redirect('/');
   }
   const user = req.session.user;
-  if (user.id === resource.user_id) {
+  const resourceOwnerId = resource.userId?.toString() || resource.user_id;
+  if (user.id === resourceOwnerId) {
     req.session.error = 'You cannot vote on your own resource.';
     return res.redirect(`/resources/${resource.id}`);
   }
-  const existingVote = voteModel.getVote(resource.id, user.id);
+  const existingVote = await voteModel.getVote(resource.id, user.id);
   if (existingVote) {
-    voteModel.removeVote(resource.id, user.id);
+    await voteModel.removeVote(resource.id, user.id);
     req.session.success = 'Removed your trust vote.';
   } else {
-    voteModel.addVote(resource.id, user.id);
+    await voteModel.addVote(resource.id, user.id);
     req.session.success = 'Thanks for trusting this resource!';
   }
   return res.redirect(`/resources/${resource.id}`);

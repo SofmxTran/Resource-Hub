@@ -1,29 +1,58 @@
-const db = require('../db/database');
+const mongoose = require('mongoose');
+const Comment = require('./Comment');
 
-function getCommentsForResource(resourceId) {
-  const stmt = db.prepare(
-    `SELECT c.*, u.username, u.full_name, u.display_name, u.avatar_path
-     FROM comments c
-     INNER JOIN users u ON c.user_id = u.id
-     WHERE c.resource_id = ?
-     ORDER BY c.created_at DESC`
-  );
-  return stmt.all(resourceId);
+function toObjectId(id) {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return typeof id === 'string' ? new mongoose.Types.ObjectId(id) : id;
+  }
+  return id;
 }
 
-function createComment({ resourceId, userId, content, rating }) {
-  const stmt = db.prepare(
-    `INSERT INTO comments (resource_id, user_id, content, rating)
-     VALUES (?, ?, ?, ?)`
-  );
-  return stmt.run(resourceId, userId, content, rating || null);
+async function getCommentsForResource(resourceId) {
+  const comments = await Comment.find({
+    resourceId: toObjectId(resourceId),
+  })
+    .populate('userId', 'username fullName displayName avatarPath')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return comments.map((c) => ({
+    id: c._id.toString(),
+    resource_id: c.resourceId.toString(),
+    user_id: c.userId._id.toString(),
+    content: c.content,
+    rating: c.rating,
+    created_at: c.createdAt,
+    username: c.userId.username,
+    full_name: c.userId.fullName,
+    display_name: c.userId.displayName,
+    avatar_path: c.userId.avatarPath,
+  }));
 }
 
-function deleteComment(id, resourceId, userId, isAdmin = false) {
-  const stmt = isAdmin
-    ? db.prepare(`DELETE FROM comments WHERE id = ? AND resource_id = ?`)
-    : db.prepare(`DELETE FROM comments WHERE id = ? AND resource_id = ? AND user_id = ?`);
-  return isAdmin ? stmt.run(id, resourceId) : stmt.run(id, resourceId, userId);
+async function createComment({ resourceId, userId, content, rating }) {
+  const comment = new Comment({
+    resourceId: toObjectId(resourceId),
+    userId: toObjectId(userId),
+    content,
+    rating: rating || null,
+  });
+  await comment.save();
+  return { changes: 1 };
+}
+
+async function deleteComment(id, resourceId, userId, isAdmin = false) {
+  const match = {
+    _id: id,
+    resourceId: toObjectId(resourceId),
+  };
+
+  if (!isAdmin) {
+    match.userId = toObjectId(userId);
+  }
+
+  const result = await Comment.deleteOne(match);
+  return { changes: result.deletedCount };
 }
 
 module.exports = {
@@ -31,4 +60,3 @@ module.exports = {
   createComment,
   deleteComment,
 };
-

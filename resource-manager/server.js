@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
+const { connectDB } = require('./db/mongoose');
 
 const authRoutes = require('./routes/authRoutes');
 const pageRoutes = require('./routes/pageRoutes');
@@ -42,10 +43,10 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   // Refresh user info from DB if session has user (to ensure isAdmin is up-to-date)
   if (req.session.user && req.session.user.id) {
-    const dbUser = userModel.findById(req.session.user.id);
+    const dbUser = await userModel.findById(req.session.user.id);
     if (dbUser) {
       req.session.user = {
         id: dbUser.id,
@@ -78,7 +79,18 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Resource Manager running at http://localhost:${PORT}`);
-});
+// Connect to MongoDB before starting server
+async function startServer() {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Resource Manager running at http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 

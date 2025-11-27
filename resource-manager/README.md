@@ -1,6 +1,6 @@
 ﻿# Resource Manager – Public Resource Hub
 
-A multi-user hub where students upload files, add links, write study guides, and share them with the community. Public resources go through an approval workflow, can be commented on or rated, and earn trust votes from other learners. Stack: **Node.js**, **Express**, **EJS**, **Bootstrap**, and **SQLite** via `better-sqlite3`.
+A multi-user hub where students upload files, add links, write study guides, and share them with the community. Public resources go through an approval workflow, can be commented on or rated, and earn trust votes from other learners. Stack: **Node.js**, **Express**, **EJS**, **Bootstrap**, and **MongoDB** via `mongoose`.
 
 ## 🎨 Neon Dark Theme UI
 
@@ -46,14 +46,40 @@ The application features a modern **dark neon theme** with purple and cyan accen
 
 ## Local Development
 
-```bash
-cd resource-manager
-npm install
-cp .env.example .env      # or copy manually on Windows
-# edit .env with your values
-npm run seed              # optional: inserts sample users/data
-npm run dev               # auto-restart with nodemon (or npm start)
-```
+### Prerequisites
+
+- **Node.js** (v14 or higher)
+- **MongoDB** (v5 or higher) - either:
+  - Local MongoDB installation, or
+  - MongoDB Atlas account (free tier available)
+
+### Setup Steps
+
+1. **Install dependencies:**
+   ```bash
+   cd resource-manager
+   npm install
+   ```
+
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env      # or copy manually on Windows
+   # edit .env with your values
+   ```
+
+3. **Start MongoDB:**
+   - **Local MongoDB**: Make sure MongoDB is running on your machine
+   - **MongoDB Atlas**: Use the connection string from your Atlas cluster
+
+4. **Seed the database (optional):**
+   ```bash
+   npm run seed              # inserts sample users/data
+   ```
+
+5. **Start the development server:**
+   ```bash
+   npm run dev               # auto-restart with nodemon (or npm start)
+   ```
 
 Then open <http://localhost:3000>.
 
@@ -61,15 +87,32 @@ Then open <http://localhost:3000>.
 
 | Key | Description |
 | --- | --- |
-| `SESSION_SECRET` | Required. Random string for express-session. |
-| `DATABASE_PATH` | Optional. Defaults to `./db/resource-manager.db`. |
+| `MONGODB_URI` | Required. MongoDB connection string. Defaults to `mongodb://127.0.0.1:27017/webhub_dev` for local development. For MongoDB Atlas, use your cluster connection string. |
+| `SESSION_SECRET` | Required. Random string for express-session. Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `PORT` | Optional. Defaults to `3000`. |
+
+### MongoDB Setup Options
+
+#### Option 1: Local MongoDB
+
+1. Install MongoDB locally ([Download MongoDB](https://www.mongodb.com/try/download/community))
+2. Start MongoDB service
+3. Use default `MONGODB_URI` in `.env`: `mongodb://127.0.0.1:27017/webhub_dev`
+
+#### Option 2: MongoDB Atlas (Cloud - Recommended for Production)
+
+1. Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a new cluster (free tier M0)
+3. Create a database user
+4. Whitelist your IP address (or use `0.0.0.0/0` for development)
+5. Get your connection string and set it as `MONGODB_URI` in `.env`
+   - Format: `mongodb+srv://username:password@cluster.mongodb.net/webhub?retryWrites=true&w=majority`
 
 Uploaded assets live in `/uploads`:
 - Resource files and images: `/uploads/`
 - User avatars: `/uploads/avatars/`
 
-Keep these folders writable when deploying. If you change `DATABASE_PATH`, ensure the parent directory exists.
+Keep these folders writable when deploying.
 
 **Note**: Avatar files in `/uploads/avatars/` should be added to `.gitignore` if you're using git (they are user-generated content).
 
@@ -77,7 +120,7 @@ Keep these folders writable when deploying. If you change `DATABASE_PATH`, ensur
 
 `npm run seed` will:
 
-- Ensure the SQLite DB and uploads folder exist.
+- Connect to MongoDB and clear existing data (optional - you can modify the script to keep existing data)
 - Create **student@example.com / password123** (regular user) with display name "Demo User" and bio.
 - Create **admin@example.com / Admin123** (site admin) with display name "Admin" and bio.
 - Insert sample domains plus two approved public resources with guide text.
@@ -165,36 +208,42 @@ git push -u origin main
 ### Quick Deploy
 
 1. Push the repo to GitHub.
-2. In Render, create a new **Web Service** connected to that repo.
-3. Configure:
+2. Set up MongoDB Atlas (recommended):
+   - Create a free MongoDB Atlas cluster
+   - Get your connection string
+   - Whitelist Render's IP ranges or use `0.0.0.0/0` for development
+3. In Render, create a new **Web Service** connected to that repo.
+4. Configure:
    - Build command: `npm install`
    - Start command: `npm start`
-4. Environment variables:
+5. Environment variables:
+   - `MONGODB_URI` – Your MongoDB Atlas connection string (e.g., `mongodb+srv://username:password@cluster.mongodb.net/webhub?retryWrites=true&w=majority`)
    - `SESSION_SECRET` – long random string (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
-   - `DATABASE_PATH` – e.g. `/opt/render/project/src/data/resource-manager.db` (use persistent disk).
    - `NODE_ENV` – `production`.
-5. Add Persistent Disk in Render Settings:
-   - Name: `data`
-   - Mount Path: `/opt/render/project/src/data`
-   - Size: 1GB or more
 6. Deploy. Render sets `PORT`, which the app already honors (`process.env.PORT || 3000`).
 
-### Deploy với Database hiện tại
+**Note**: With MongoDB Atlas, you don't need persistent disk for the database. However, uploaded files in `/uploads` will still be lost on free plan unless you use external storage (e.g., Cloudinary, S3).
 
-**QUAN TRỌNG**: Nếu bạn muốn giữ nguyên database và tài khoản admin hiện tại:
+### Production Deployment
 
-1. **Backup database trước khi deploy:**
-   ```bash
-   npm run backup-db
-   ```
+For production deployment:
 
-2. **Chọn hướng dẫn phù hợp:**
-   - **Render Paid Plan** (có persistent disk): Xem **`DEPLOY.md`**
-   - **Render Free Plan** (không có persistent disk): Xem **`DEPLOY-FREE.md`**
+1. **Use MongoDB Atlas** (recommended):
+   - Free tier available with 512MB storage
+   - Automatic backups
+   - No need for persistent disk
+   - Set `MONGODB_URI` environment variable with your Atlas connection string
 
-3. **Upload database backup** theo hướng dẫn trong file tương ứng.
+2. **For uploaded files**, consider using external storage:
+   - **Cloudinary** (free tier available)
+   - **AWS S3** or compatible services
+   - This prevents file loss on platforms without persistent disk
 
-Xem file **`DEPLOY.md`** (paid plan) hoặc **`DEPLOY-FREE.md`** (free plan) để có hướng dẫn chi tiết.
+3. **Environment variables for production:**
+   - `MONGODB_URI` – MongoDB Atlas connection string
+   - `SESSION_SECRET` – Strong random secret
+   - `NODE_ENV` – `production`
+   - `PORT` – Usually set automatically by hosting platform
 
 Railway/Heroku or any Node-friendly platform follow the same pattern: install dependencies and run `npm start` with the same env vars.
 

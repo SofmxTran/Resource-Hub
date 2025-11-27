@@ -1,7 +1,7 @@
 ﻿const domainModel = require('../models/domainModel');
 
-function listDomains(req, res) {
-  const domains = domainModel.getAllDomains();
+async function listDomains(req, res) {
+  const domains = await domainModel.getAllDomains();
   res.render('domains/index', { 
     title: 'Domains', 
     domains,
@@ -9,7 +9,7 @@ function listDomains(req, res) {
   });
 }
 
-function createDomain(req, res) {
+async function createDomain(req, res) {
   const { name, description } = req.body;
   if (!name) {
     req.session.error = 'Domain name is required.';
@@ -17,7 +17,7 @@ function createDomain(req, res) {
   }
 
   try {
-    domainModel.createDomain({ name, description });
+    await domainModel.createDomain({ name, description });
     req.session.success = 'Domain created.';
   } catch (error) {
     req.session.error = 'Domain name must be unique.';
@@ -26,8 +26,8 @@ function createDomain(req, res) {
   return res.redirect('/domains');
 }
 
-function renderEdit(req, res) {
-  const domain = domainModel.getDomainById(req.params.id);
+async function renderEdit(req, res) {
+  const domain = await domainModel.getDomainById(req.params.id);
   if (!domain) {
     req.session.error = 'Domain not found.';
     return res.redirect('/domains');
@@ -39,10 +39,10 @@ function renderEdit(req, res) {
   });
 }
 
-function updateDomainHandler(req, res) {
+async function updateDomainHandler(req, res) {
   const { name, description } = req.body;
   try {
-    domainModel.updateDomain(req.params.id, { name, description });
+    await domainModel.updateDomain(req.params.id, { name, description });
     req.session.success = 'Domain updated.';
   } catch (error) {
     req.session.error = 'Unable to update domain. Name may already exist.';
@@ -50,13 +50,13 @@ function updateDomainHandler(req, res) {
   return res.redirect('/domains');
 }
 
-function deleteDomainHandler(req, res) {
+async function deleteDomainHandler(req, res) {
   const { id } = req.params;
-  if (domainModel.domainHasResources(id)) {
+  if (await domainModel.domainHasResources(id)) {
     req.session.error = 'Cannot delete: domain still has resources.';
     return res.redirect('/domains');
   }
-  domainModel.deleteDomain(id);
+  await domainModel.deleteDomain(id);
   req.session.success = 'Domain deleted.';
   return res.redirect('/domains');
 }

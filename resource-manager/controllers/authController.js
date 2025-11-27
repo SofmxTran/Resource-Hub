@@ -32,20 +32,20 @@ async function register(req, res) {
     return res.redirect('/register');
   }
 
-  const existingEmail = userModel.findByEmail(email);
+  const existingEmail = await userModel.findByEmail(email);
   if (existingEmail) {
     req.session.error = 'Email already registered.';
     return res.redirect('/register');
   }
 
-  const existingUsername = userModel.findByUsername(username);
+  const existingUsername = await userModel.findByUsername(username);
   if (existingUsername) {
     req.session.error = 'Username already taken.';
     return res.redirect('/register');
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = userModel.createUser({
+  const user = await userModel.createUser({
     fullName,
     email,
     passwordHash,
@@ -74,7 +74,7 @@ async function login(req, res) {
     return res.redirect('/login');
   }
 
-  const user = userModel.findByEmail(email);
+  const user = await userModel.findByEmail(email);
   if (!user) {
     req.session.error = 'Invalid credentials.';
     return res.redirect('/login');

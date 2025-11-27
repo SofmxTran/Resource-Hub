@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const userModel = require('../models/userModel');
 
-function renderProfileSettings(req, res) {
-  const user = userModel.findById(req.session.user.id);
+async function renderProfileSettings(req, res) {
+  const user = await userModel.findById(req.session.user.id);
   if (!user) {
     req.session.error = 'User not found.';
     return res.redirect('/profile');
@@ -16,7 +16,7 @@ function renderProfileSettings(req, res) {
   });
 }
 
-function updateProfileSettings(req, res) {
+async function updateProfileSettings(req, res) {
   const userId = req.session.user.id;
   const { displayName, bio, website } = req.body;
   
@@ -50,7 +50,7 @@ function updateProfileSettings(req, res) {
     }
     
     // Get current user to check for existing avatar
-    const currentUser = userModel.findById(userId);
+    const currentUser = await userModel.findById(userId);
     if (currentUser && currentUser.avatar_path) {
       // Remove old avatar file
       const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
@@ -69,7 +69,7 @@ function updateProfileSettings(req, res) {
   }
   
   // Update profile
-  userModel.updateProfile(userId, {
+  await userModel.updateProfile(userId, {
     displayName: cleanDisplayName,
     bio: cleanBio,
     website: cleanWebsite,
@@ -77,7 +77,7 @@ function updateProfileSettings(req, res) {
   });
   
   // Update session user info
-  const updatedUser = userModel.findById(userId);
+  const updatedUser = await userModel.findById(userId);
   req.session.user = {
     id: updatedUser.id,
     fullName: updatedUser.full_name,

@@ -16,10 +16,10 @@ function buildFeedFilters(query = {}) {
   };
 }
 
-function showHome(req, res) {
+async function showHome(req, res) {
   const filters = buildFeedFilters(req.query);
-  const feed = resourceModel.getPublicResources(filters, 20);
-  const domains = domainModel.getAllDomains();
+  const feed = await resourceModel.getPublicResources(filters, 20);
+  const domains = await domainModel.getAllDomains();
 
   res.render('home', {
     title: 'My Resource Hub',
@@ -30,16 +30,16 @@ function showHome(req, res) {
   });
 }
 
-function showDashboard(req, res) {
+async function showDashboard(req, res) {
   const userId = req.session.user.id;
   const stats = {
-    totalResources: resourceModel.getResourceCount(userId),
-    breakdown: resourceModel.getDomainBreakdown(userId),
-    recent: resourceModel.getRecentResources(userId, 5),
-    favorites: resourceModel.getFavoriteResources(userId, 5),
-    domains: domainModel.getAllDomains(),
-    visibility: resourceModel.getUserVisibilityStats(userId),
-    publicFeed: resourceModel.getPublicResources({}, 5),
+    totalResources: await resourceModel.getResourceCount(userId),
+    breakdown: await resourceModel.getDomainBreakdown(userId),
+    recent: await resourceModel.getRecentResources(userId, 5),
+    favorites: await resourceModel.getFavoriteResources(userId, 5),
+    domains: await domainModel.getAllDomains(),
+    visibility: await resourceModel.getUserVisibilityStats(userId),
+    publicFeed: await resourceModel.getPublicResources({}, 5),
   };
 
   res.render('dashboard', {

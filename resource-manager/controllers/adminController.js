@@ -1,12 +1,12 @@
 const resourceModel = require('../models/resourceModel');
 const userModel = require('../models/userModel');
 
-function renderDashboard(_req, res) {
+async function renderDashboard(_req, res) {
   const stats = {
-    totalUsers: userModel.getUserCount(),
-    totalResources: resourceModel.getTotalResourceCount(),
-    pendingResources: resourceModel.getPendingResourceCount(),
-    pendingList: resourceModel.getRecentPending(5),
+    totalUsers: await userModel.getUserCount(),
+    totalResources: await resourceModel.getTotalResourceCount(),
+    pendingResources: await resourceModel.getPendingResourceCount(),
+    pendingList: await resourceModel.getRecentPending(5),
   };
 
   res.render('admin/dashboard', {
@@ -16,13 +16,13 @@ function renderDashboard(_req, res) {
   });
 }
 
-function listResources(req, res) {
+async function listResources(req, res) {
   const status = (req.query.status || 'all').toUpperCase();
   const allowedStatuses = ['PENDING', 'APPROVED', 'REJECTED'];
   const resources =
     allowedStatuses.includes(status) && status !== 'ALL'
-      ? resourceModel.getResourcesByStatus(status)
-      : resourceModel.getAllResourcesForAdmin();
+      ? await resourceModel.getResourcesByStatus(status)
+      : await resourceModel.getAllResourcesForAdmin();
 
   res.render('admin/resources', {
     title: 'Manage Resources',
@@ -33,14 +33,14 @@ function listResources(req, res) {
   });
 }
 
-function updateResourceStatus(req, res, newStatus) {
+async function updateResourceStatus(req, res, newStatus) {
   const resourceId = req.params.id;
-  const resource = resourceModel.getResourceForDetail(resourceId);
+  const resource = await resourceModel.getResourceForDetail(resourceId);
   if (!resource) {
     req.session.error = 'Resource not found.';
     return res.redirect('/admin/resources');
   }
-  resourceModel.updateStatus(resourceId, newStatus);
+  await resourceModel.updateStatus(resourceId, newStatus);
   req.session.success =
     newStatus === 'APPROVED'
       ? 'Resource approved and will appear publicly.'
@@ -62,14 +62,14 @@ function rejectResource(req, res) {
   return updateResourceStatus(req, res, 'REJECTED');
 }
 
-function deleteResource(req, res) {
+async function deleteResource(req, res) {
   const resourceId = req.params.id;
-  const resource = resourceModel.getResourceForDetail(resourceId);
+  const resource = await resourceModel.getResourceForDetail(resourceId);
   if (!resource) {
     req.session.error = 'Resource not found.';
     return res.redirect('/admin/resources');
   }
-  resourceModel.deleteResourceByAdmin(resourceId);
+  await resourceModel.deleteResourceByAdmin(resourceId);
   req.session.success = 'Resource deleted.';
   return res.redirect('/admin/resources');
 }

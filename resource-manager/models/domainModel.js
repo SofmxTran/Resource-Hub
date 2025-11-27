@@ -1,43 +1,68 @@
-﻿const db = require('../db/database');
+﻿const Domain = require('./Domain');
+const Resource = require('./Resource');
 
-function getAllDomains() {
-  const stmt = db.prepare(
-    `SELECT d.*, 
-            (SELECT COUNT(*) FROM resources r WHERE r.domain_id = d.id) AS resourceCount
-     FROM domains d
-     ORDER BY d.name`
-  );
-  return stmt.all();
+async function getAllDomains() {
+  const domains = await Domain.aggregate([
+    {
+      $lookup: {
+        from: 'resources',
+        localField: '_id',
+        foreignField: 'domainId',
+        as: 'resources',
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        resourceCount: { $size: '$resources' },
+      },
+    },
+    { $sort: { name: 1 } },
+  ]);
+
+  return domains.map((d) => ({
+    id: d._id.toString(),
+    name: d.name,
+    description: d.description,
+    created_at: d.createdAt,
+    resourceCount: d.resourceCount,
+  }));
 }
 
-function getDomainById(id) {
-  const stmt = db.prepare(`SELECT * FROM domains WHERE id = ?`);
-  return stmt.get(id);
+async function getDomainById(id) {
+  const domain = await Domain.findById(id);
+  if (!domain) return null;
+  return {
+    id: domain._id.toString(),
+    name: domain.name,
+    description: domain.description,
+    created_at: domain.createdAt,
+  };
 }
 
-function createDomain({ name, description }) {
-  const stmt = db.prepare(
-    `INSERT INTO domains (name, description) VALUES (?, ?)`
-  );
-  return stmt.run(name, description);
+async function createDomain({ name, description }) {
+  const domain = new Domain({ name, description });
+  await domain.save();
+  return { changes: 1 };
 }
 
-function updateDomain(id, { name, description }) {
-  const stmt = db.prepare(
-    `UPDATE domains SET name = ?, description = ? WHERE id = ?`
-  );
-  return stmt.run(name, description, id);
+async function updateDomain(id, { name, description }) {
+  const domain = await Domain.findByIdAndUpdate(id, { name, description }, { new: true });
+  return { changes: domain ? 1 : 0 };
 }
 
-function deleteDomain(id) {
-  const stmt = db.prepare(`DELETE FROM domains WHERE id = ?`);
-  return stmt.run(id);
+async function deleteDomain(id) {
+  const result = await Domain.deleteOne({ _id: id });
+  return { changes: result.deletedCount };
 }
 
-function domainHasResources(id) {
-  const stmt = db.prepare(`SELECT COUNT(*) as total FROM resources WHERE domain_id = ?`);
-  const { total } = stmt.get(id);
-  return total > 0;
+async function domainHasResources(id) {
+  const count = await Resource.countDocuments({ domainId: id });
+  return count > 0;
 }
 
 module.exports = {
@@ -48,4 +73,3 @@ module.exports = {
   deleteDomain,
   domainHasResources,
 };
-

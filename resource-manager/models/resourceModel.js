@@ -1,131 +1,160 @@
-﻿const db = require('../db/database');
+﻿const mongoose = require('mongoose');
+const Resource = require('./Resource');
+const ResourceVote = require('./ResourceVote');
 
-const trustJoin = `
-  LEFT JOIN (
-    SELECT resource_id, COALESCE(SUM(value), 0) AS trust_score
-    FROM resource_votes
-    GROUP BY resource_id
-  ) v ON v.resource_id = r.id
-`;
+// Helper to convert string to ObjectId if needed
+function toObjectId(id) {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return typeof id === 'string' ? new mongoose.Types.ObjectId(id) : id;
+  }
+  return id;
+}
+
+// Helper to calculate trust score for a resource
+async function getTrustScore(resourceId) {
+  const result = await ResourceVote.aggregate([
+    { $match: { resourceId: toObjectId(resourceId) } },
+    { $group: { _id: '$resourceId', trustScore: { $sum: '$value' } } },
+  ]);
+  return result.length > 0 ? result[0].trustScore : 0;
+}
+
+// Helper to add trust score to resources
+async function addTrustScoresToResources(resources) {
+  const resourceIds = resources.map((r) => r._id || r.id);
+  const votes = await ResourceVote.aggregate([
+    { $match: { resourceId: { $in: resourceIds } } },
+    { $group: { _id: '$resourceId', trustScore: { $sum: '$value' } } },
+  ]);
+  const voteMap = {};
+  votes.forEach((v) => {
+    voteMap[v._id.toString()] = v.trustScore;
+  });
+
+  return resources.map((r) => {
+    const id = (r._id || r.id).toString();
+    return {
+      ...r.toObject ? r.toObject() : r,
+      id: id,
+      trust_score: voteMap[id] || 0,
+    };
+  });
+}
 
 function buildFilters(userId, filters = {}) {
-  const clauses = ['r.user_id = ?'];
-  const params = [userId];
+  const match = { userId: toObjectId(userId) };
 
   if (filters.domain && filters.domain !== 'all') {
-    clauses.push('r.domain_id = ?');
-    params.push(filters.domain);
+    match.domainId = toObjectId(filters.domain);
   }
 
   if (filters.type && filters.type !== 'all') {
-    clauses.push('r.type = ?');
-    params.push(filters.type);
+    match.type = filters.type;
   }
 
   if (filters.purpose && filters.purpose !== 'all') {
-    clauses.push('r.purpose = ?');
-    params.push(filters.purpose);
+    match.purpose = filters.purpose;
   }
 
   if (filters.favorite === '1') {
-    clauses.push('r.is_favorite = 1');
+    match.isFavorite = true;
   }
 
   if (filters.status && filters.status !== 'ALL') {
-    clauses.push('r.status = ?');
-    params.push(filters.status);
+    match.status = filters.status;
   }
 
   if (filters.q) {
-    clauses.push(
-      "(LOWER(r.title) LIKE ? OR LOWER(COALESCE(r.description, '')) LIKE ?)"
-    );
-    params.push(`%${filters.q.toLowerCase()}%`, `%${filters.q.toLowerCase()}%`);
+    match.$or = [
+      { title: { $regex: filters.q, $options: 'i' } },
+      { description: { $regex: filters.q, $options: 'i' } },
+    ];
   }
 
-  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  return { where, params };
+  return match;
 }
 
 function buildPublicFilters(filters = {}) {
-  const clauses = ["r.is_public = 1", "r.status = 'APPROVED'"];
-  const params = [];
+  const match = { isPublic: true, status: 'APPROVED' };
 
   if (filters.domain && filters.domain !== 'all') {
-    clauses.push('r.domain_id = ?');
-    params.push(filters.domain);
+    match.domainId = toObjectId(filters.domain);
   }
 
   if (filters.type && filters.type !== 'all') {
-    clauses.push('r.type = ?');
-    params.push(filters.type);
+    match.type = filters.type;
   }
 
   if (filters.purpose && filters.purpose !== 'all') {
-    clauses.push('r.purpose = ?');
-    params.push(filters.purpose);
+    match.purpose = filters.purpose;
   }
 
   if (filters.q) {
-    clauses.push(
-      "(LOWER(r.title) LIKE ? OR LOWER(COALESCE(r.description, '')) LIKE ?)"
-    );
-    params.push(`%${filters.q.toLowerCase()}%`, `%${filters.q.toLowerCase()}%`);
+    match.$or = [
+      { title: { $regex: filters.q, $options: 'i' } },
+      { description: { $regex: filters.q, $options: 'i' } },
+    ];
   }
 
   if (filters.username) {
-    clauses.push('LOWER(u.username) = ?');
-    params.push(filters.username.toLowerCase());
+    // We'll need to join with User model for this
+    match['userId.username'] = filters.username.toLowerCase();
   }
 
-  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  return { where, params };
+  return match;
 }
 
-function getAllResources(userId, filters = {}) {
-  const { where, params } = buildFilters(userId, filters);
-  const query = `
-    SELECT r.*, d.name AS domain_name, COALESCE(v.trust_score, 0) AS trust_score
-    FROM resources r
-    LEFT JOIN domains d ON r.domain_id = d.id
-    ${trustJoin}
-    ${where}
-    ORDER BY r.created_at DESC
-  `;
-  return db.prepare(query).all(...params);
+async function getAllResources(userId, filters = {}) {
+  const match = buildFilters(userId, filters);
+  const resources = await Resource.find(match)
+    .populate('domainId', 'name')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return await addTrustScoresToResources(resources);
 }
 
-function getResourceById(id, userId) {
-  const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name, COALESCE(v.trust_score, 0) AS trust_score
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     ${trustJoin}
-     WHERE r.id = ? AND r.user_id = ?`
-  );
-  return stmt.get(id, userId);
+async function getResourceById(id, userId) {
+  const resource = await Resource.findOne({
+    _id: id,
+    userId: toObjectId(userId),
+  })
+    .populate('domainId', 'name')
+    .lean();
+
+  if (!resource) return null;
+
+  const trustScore = await getTrustScore(resource._id);
+  return {
+    ...resource,
+    id: resource._id.toString(),
+    trust_score: trustScore,
+  };
 }
 
-function getResourceForDetail(id) {
-  const stmt = db.prepare(
-    `SELECT r.*, 
-            d.name AS domain_name,
-            u.username,
-            u.full_name,
-            u.display_name,
-            u.avatar_path,
-            u.id AS owner_id,
-            COALESCE(v.trust_score, 0) AS trust_score
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     INNER JOIN users u ON r.user_id = u.id
-     ${trustJoin}
-     WHERE r.id = ?`
-  );
-  return stmt.get(id);
+async function getResourceForDetail(id) {
+  const resource = await Resource.findById(id)
+    .populate('domainId', 'name')
+    .populate('userId', 'username fullName displayName avatarPath')
+    .lean();
+
+  if (!resource) return null;
+
+  const trustScore = await getTrustScore(resource._id);
+  return {
+    ...resource,
+    id: resource._id.toString(),
+    domain_name: resource.domainId?.name || null,
+    username: resource.userId?.username || null,
+    full_name: resource.userId?.fullName || null,
+    display_name: resource.userId?.displayName || null,
+    avatar_path: resource.userId?.avatarPath || null,
+    owner_id: resource.userId?._id?.toString() || null,
+    trust_score: trustScore,
+  };
 }
 
-function createResource({
+async function createResource({
   userId,
   domainId,
   title,
@@ -139,240 +168,328 @@ function createResource({
   isPublic,
   status = 'PENDING',
 }) {
-  const stmt = db.prepare(
-    `INSERT INTO resources 
-    (user_id, domain_id, title, description, type, file_path, image_path, url, purpose, guide_text, is_public, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-  const result = stmt.run(
-    userId,
-    domainId || null,
+  const resource = new Resource({
+    userId: toObjectId(userId),
+    domainId: domainId ? toObjectId(domainId) : null,
     title,
     description,
     type,
-    filePath || null,
-    imagePath || null,
-    url || null,
-    purpose || null,
-    guideText || null,
-    isPublic ? 1 : 0,
-    status
-  );
-  return result.lastInsertRowid;
+    filePath: filePath || null,
+    imagePath: imagePath || null,
+    url: url || null,
+    purpose: purpose || null,
+    guideText: guideText || null,
+    isPublic: isPublic !== false,
+    status,
+  });
+  await resource.save();
+  return resource._id.toString();
 }
 
-function updateResource(
-  id,
-  userId,
-  {
-    domainId,
+async function updateResource(id, userId, {
+  domainId,
+  title,
+  description,
+  type,
+  filePath,
+  imagePath,
+  url,
+  purpose,
+  guideText,
+  isPublic,
+  status,
+}) {
+  const updateData = {
+    domainId: domainId && require('mongoose').Types.ObjectId.isValid(domainId) ? new require('mongoose').Types.ObjectId(domainId) : domainId || null,
     title,
     description,
     type,
-    filePath,
-    imagePath,
-    url,
-    purpose,
-    guideText,
-    isPublic,
+    filePath: filePath || null,
+    imagePath: imagePath || null,
+    url: url || null,
+    purpose: purpose || null,
+    guideText: guideText || null,
+    isPublic: isPublic !== false,
     status,
+  };
+
+  const resource = await Resource.findOneAndUpdate(
+    { _id: id, userId: toObjectId(userId) },
+    updateData,
+    { new: true }
+  );
+  return { changes: resource ? 1 : 0 };
+}
+
+async function updateStatus(id, status) {
+  const resource = await Resource.findByIdAndUpdate(id, { status }, { new: true });
+  return { changes: resource ? 1 : 0 };
+}
+
+async function deleteResource(id, userId) {
+  const result = await Resource.deleteOne({
+    _id: id,
+    userId: toObjectId(userId),
+  });
+  return { changes: result.deletedCount };
+}
+
+async function deleteResourceByAdmin(id) {
+  const result = await Resource.deleteOne({ _id: id });
+  return { changes: result.deletedCount };
+}
+
+async function toggleFavorite(id, userId, isFavorite) {
+  const resource = await Resource.findOneAndUpdate(
+    { _id: id, userId: toObjectId(userId) },
+    { isFavorite },
+    { new: true }
+  );
+  return { changes: resource ? 1 : 0 };
+}
+
+async function getResourceCount(userId) {
+  return await Resource.countDocuments({
+    userId: toObjectId(userId),
+  });
+}
+
+async function getTotalResourceCount() {
+  return await Resource.countDocuments();
+}
+
+async function getPendingResourceCount() {
+  return await Resource.countDocuments({ status: 'PENDING', isPublic: true });
+}
+
+async function getDomainBreakdown(userId) {
+  const breakdown = await Resource.aggregate([
+    { $match: { userId: toObjectId(userId) } },
+    {
+      $lookup: {
+        from: 'domains',
+        localField: 'domainId',
+        foreignField: '_id',
+        as: 'domain',
+      },
+    },
+    {
+      $group: {
+        _id: '$domainId',
+        domain_name: { $first: { $ifNull: [{ $arrayElemAt: ['$domain.name', 0] }, 'Uncategorized'] } },
+        total: { $sum: 1 },
+      },
+    },
+    { $sort: { total: -1 } },
+  ]);
+
+  return breakdown.map((b) => ({
+    domain_name: b.domain_name,
+    total: b.total,
+  }));
+}
+
+async function getRecentResources(userId, limit = 5) {
+  const resources = await Resource.find({
+    userId: toObjectId(userId),
+  })
+    .populate('domainId', 'name')
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  return resources.map((r) => ({
+    ...r,
+    id: r._id.toString(),
+    domain_name: r.domainId?.name || null,
+  }));
+}
+
+async function getFavoriteResources(userId, limit = 5) {
+  const resources = await Resource.find({
+    userId: toObjectId(userId),
+    isFavorite: true,
+  })
+    .populate('domainId', 'name')
+    .sort({ updatedAt: -1 })
+    .limit(limit)
+    .lean();
+
+  return resources.map((r) => ({
+    ...r,
+    id: r._id.toString(),
+    domain_name: r.domainId?.name || null,
+  }));
+}
+
+async function getPublicResources(filters = {}, limit = 20) {
+  const match = buildPublicFilters(filters);
+
+  // Handle username filter separately with lookup
+  let pipeline = [
+    { $match: { isPublic: true, status: 'APPROVED' } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+  ];
+
+  if (filters.domain && filters.domain !== 'all') {
+    pipeline.push({ $match: { domainId: toObjectId(filters.domain) } });
   }
-) {
-  const stmt = db.prepare(
-    `UPDATE resources
-     SET domain_id = ?, title = ?, description = ?, type = ?, file_path = ?, image_path = ?, url = ?, purpose = ?, guide_text = ?, is_public = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-     WHERE id = ? AND user_id = ?`
+
+  if (filters.type && filters.type !== 'all') {
+    pipeline.push({ $match: { type: filters.type } });
+  }
+
+  if (filters.purpose && filters.purpose !== 'all') {
+    pipeline.push({ $match: { purpose: filters.purpose } });
+  }
+
+  if (filters.username) {
+    pipeline.push({ $match: { 'user.username': filters.username.toLowerCase() } });
+  }
+
+  if (filters.q) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { title: { $regex: filters.q, $options: 'i' } },
+          { description: { $regex: filters.q, $options: 'i' } },
+        ],
+      },
+    });
+  }
+
+  pipeline.push(
+    {
+      $lookup: {
+        from: 'domains',
+        localField: 'domainId',
+        foreignField: '_id',
+        as: 'domain',
+      },
+    },
+    { $unwind: { path: '$domain', preserveNullAndEmptyArrays: true } },
+    { $sort: { createdAt: -1 } },
+    { $limit: limit }
   );
-  return stmt.run(
-    domainId || null,
-    title,
-    description,
-    type,
-    filePath || null,
-    imagePath || null,
-    url || null,
-    purpose || null,
-    guideText || null,
-    isPublic ? 1 : 0,
-    status,
-    id,
-    userId
-  );
+
+  const resources = await Resource.aggregate(pipeline);
+
+  // Add trust scores
+  const resourceIds = resources.map((r) => r._id);
+  const votes = await ResourceVote.aggregate([
+    { $match: { resourceId: { $in: resourceIds } } },
+    { $group: { _id: '$resourceId', trustScore: { $sum: '$value' } } },
+  ]);
+  const voteMap = {};
+  votes.forEach((v) => {
+    voteMap[v._id.toString()] = v.trustScore;
+  });
+
+  return resources.map((r) => ({
+    ...r,
+    id: r._id.toString(),
+    domain_name: r.domain?.name || null,
+    username: r.user?.username || null,
+    full_name: r.user?.fullName || null,
+    display_name: r.user?.displayName || null,
+    avatar_path: r.user?.avatarPath || null,
+    trust_score: voteMap[r._id.toString()] || 0,
+  }));
 }
 
-function updateStatus(id, status) {
-  const stmt = db.prepare(
-    `UPDATE resources SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-  );
-  return stmt.run(status, id);
+async function getResourcesForUser(userId) {
+  const resources = await Resource.find({
+    userId: toObjectId(userId),
+  })
+    .populate('domainId', 'name')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return await addTrustScoresToResources(resources);
 }
 
-function deleteResource(id, userId) {
-  const stmt = db.prepare(`DELETE FROM resources WHERE id = ? AND user_id = ?`);
-  return stmt.run(id, userId);
+async function getPublicResourcesByUser(userId) {
+  const resources = await Resource.find({
+    userId: toObjectId(userId),
+    isPublic: true,
+    status: 'APPROVED',
+  })
+    .populate('domainId', 'name')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return await addTrustScoresToResources(resources);
 }
 
-function deleteResourceByAdmin(id) {
-  const stmt = db.prepare(`DELETE FROM resources WHERE id = ?`);
-  return stmt.run(id);
-}
-function toggleFavorite(id, userId, isFavorite) {
-  const stmt = db.prepare(
-    `UPDATE resources SET is_favorite = ? WHERE id = ? AND user_id = ?`
-  );
-  return stmt.run(isFavorite ? 1 : 0, id, userId);
-}
+async function getUserVisibilityStats(userId) {
+  const stats = await Resource.aggregate([
+    { $match: { userId: toObjectId(userId) } },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        publicCount: { $sum: { $cond: ['$isPublic', 1, 0] } },
+        privateCount: { $sum: { $cond: [{ $not: '$isPublic' }, 1, 0] } },
+      },
+    },
+  ]);
 
-function getResourceCount(userId) {
-  const stmt = db.prepare(
-    `SELECT COUNT(*) AS total FROM resources WHERE user_id = ?`
-  );
-  return stmt.get(userId).total;
-}
+  if (stats.length === 0) {
+    return { total: 0, public: 0, private: 0 };
+  }
 
-function getTotalResourceCount() {
-  return db.prepare(`SELECT COUNT(*) AS total FROM resources`).get().total;
-}
-
-function getPendingResourceCount() {
-  return db
-    .prepare(
-      `SELECT COUNT(*) AS total FROM resources WHERE status = 'PENDING' AND is_public = 1`
-    )
-    .get().total;
-}
-
-function getDomainBreakdown(userId) {
-  const stmt = db.prepare(
-    `SELECT COALESCE(d.name, 'Uncategorized') AS domain_name, COUNT(*) AS total
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     WHERE r.user_id = ?
-     GROUP BY r.domain_id
-     ORDER BY total DESC`
-  );
-  return stmt.all(userId);
-}
-
-function getRecentResources(userId, limit = 5) {
-  const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     WHERE r.user_id = ?
-     ORDER BY r.created_at DESC
-     LIMIT ?`
-  );
-  return stmt.all(userId, limit);
-}
-
-function getFavoriteResources(userId, limit = 5) {
-  const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     WHERE r.user_id = ? AND r.is_favorite = 1
-     ORDER BY r.updated_at DESC
-     LIMIT ?`
-  );
-  return stmt.all(userId, limit);
-}
-
-function getPublicResources(filters = {}, limit = 20) {
-  const { where, params } = buildPublicFilters(filters);
-  const query = `
-    SELECT r.*, d.name AS domain_name, u.username, u.full_name, u.display_name, u.avatar_path, COALESCE(v.trust_score, 0) AS trust_score
-    FROM resources r
-    INNER JOIN users u ON r.user_id = u.id
-    LEFT JOIN domains d ON r.domain_id = d.id
-    ${trustJoin}
-    ${where}
-    ORDER BY r.created_at DESC
-    LIMIT ?
-  `;
-  return db.prepare(query).all(...params, limit);
-}
-
-function getResourcesForUser(userId) {
-  const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name, COALESCE(v.trust_score, 0) AS trust_score
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     ${trustJoin}
-     WHERE r.user_id = ?
-     ORDER BY r.created_at DESC`
-  );
-  return stmt.all(userId);
-}
-
-function getPublicResourcesByUser(userId) {
-  const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name, COALESCE(v.trust_score, 0) AS trust_score
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     ${trustJoin}
-     WHERE r.user_id = ? AND r.is_public = 1 AND r.status = 'APPROVED'
-     ORDER BY r.created_at DESC`
-  );
-  return stmt.all(userId);
-}
-
-function getUserVisibilityStats(userId) {
-  const stmt = db.prepare(
-    `SELECT 
-        COUNT(*) AS total,
-        SUM(CASE WHEN is_public = 1 THEN 1 ELSE 0 END) AS publicCount,
-        SUM(CASE WHEN is_public = 0 THEN 1 ELSE 0 END) AS privateCount
-     FROM resources
-     WHERE user_id = ?`
-  );
-  const row = stmt.get(userId) || {
-    total: 0,
-    publicCount: 0,
-    privateCount: 0,
-  };
   return {
-    total: row.total || 0,
-    public: row.publicCount || 0,
-    private: row.privateCount || 0,
+    total: stats[0].total || 0,
+    public: stats[0].publicCount || 0,
+    private: stats[0].privateCount || 0,
   };
 }
 
-function getResourcesByStatus(status) {
-  const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name, u.username, u.full_name, u.display_name, u.avatar_path, COALESCE(v.trust_score, 0) AS trust_score
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     INNER JOIN users u ON r.user_id = u.id
-     ${trustJoin}
-     WHERE r.status = ?
-     ORDER BY r.created_at DESC`
-  );
-  return stmt.all(status);
+async function getResourcesByStatus(status) {
+  const resources = await Resource.find({ status })
+    .populate('domainId', 'name')
+    .populate('userId', 'username fullName displayName avatarPath')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return await addTrustScoresToResources(resources);
 }
 
-function getAllResourcesForAdmin() {
-  const stmt = db.prepare(
-    `SELECT r.*, d.name AS domain_name, u.username, u.full_name, u.display_name, u.avatar_path, COALESCE(v.trust_score, 0) AS trust_score
-     FROM resources r
-     LEFT JOIN domains d ON r.domain_id = d.id
-     INNER JOIN users u ON r.user_id = u.id
-     ${trustJoin}
-     ORDER BY r.created_at DESC`
-  );
-  return stmt.all();
+async function getAllResourcesForAdmin() {
+  const resources = await Resource.find({})
+    .populate('domainId', 'name')
+    .populate('userId', 'username fullName displayName avatarPath')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return await addTrustScoresToResources(resources);
 }
-function getRecentPending(limit = 5) {
-  const stmt = db.prepare(
-    `SELECT r.*, u.username, u.full_name, u.display_name, u.avatar_path, d.name AS domain_name
-     FROM resources r
-     INNER JOIN users u ON r.user_id = u.id
-     LEFT JOIN domains d ON r.domain_id = d.id
-     WHERE r.status = 'PENDING' AND r.is_public = 1
-     ORDER BY r.created_at ASC
-     LIMIT ?`
-  );
-  return stmt.all(limit);
+
+async function getRecentPending(limit = 5) {
+  const resources = await Resource.find({ status: 'PENDING', isPublic: true })
+    .populate('userId', 'username fullName displayName avatarPath')
+    .populate('domainId', 'name')
+    .sort({ createdAt: 1 })
+    .limit(limit)
+    .lean();
+
+  return resources.map((r) => ({
+    ...r,
+    id: r._id.toString(),
+    username: r.userId?.username || null,
+    full_name: r.userId?.fullName || null,
+    display_name: r.userId?.displayName || null,
+    avatar_path: r.userId?.avatarPath || null,
+    domain_name: r.domainId?.name || null,
+  }));
 }
 
 module.exports = {
@@ -399,4 +516,3 @@ module.exports = {
   getAllResourcesForAdmin,
   deleteResourceByAdmin,
 };
-
