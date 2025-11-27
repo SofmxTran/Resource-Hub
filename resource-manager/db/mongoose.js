@@ -35,11 +35,19 @@ function ensureDatabaseName(uri) {
         }
       } else {
         // Database name exists, check if it's empty or just whitespace
-        const dbName = pathMatch[1].trim();
+        // Also handle trailing slash like: /webhub/?appName=...
+        let dbName = pathMatch[1].trim();
+        // Remove trailing slash if present
+        dbName = dbName.replace(/\/$/, '');
+        
         if (dbName === '' || dbName === '/') {
           // Empty database name, replace it
           uri = uri.replace(/\/[^?]*(\?|$)/, `/${DEFAULT_DB_NAME}$1`);
           console.log(`⚠️  Empty database name in MONGODB_URI, using "${DEFAULT_DB_NAME}"`);
+        } else if (dbName !== pathMatch[1]) {
+          // Had trailing slash, normalize it (remove the extra /)
+          uri = uri.replace(/\/webhub\/\?/, '/webhub?');
+          console.log(`ℹ️  Normalized MONGODB_URI (removed trailing slash after database name)`);
         }
       }
     } else {
@@ -99,29 +107,30 @@ function getDatabaseName(uri) {
   
   try {
     // Try regex extraction first (works for both mongodb:// and mongodb+srv://)
-    const match = uri.match(/\/([^/?]+)(\?|$)/);
+    // Handle cases like: /webhub? or /webhub/? (with trailing slash)
+    const match = uri.match(/\/([^/?]+)\/?(\?|$)/);
     if (match && match[1] && match[1].trim() !== '') {
-      return match[1];
+      return match[1].trim(); // Trim any whitespace
     }
     
     // Fallback: try URL parsing
     const url = new URL(uri);
     const pathParts = url.pathname.split('/').filter(p => p);
     if (pathParts.length > 0 && pathParts[0].trim() !== '') {
-      return pathParts[0];
+      return pathParts[0].trim();
     }
     
     // Check query params
     const dbFromQuery = url.searchParams.get('db') || url.searchParams.get('database');
     if (dbFromQuery) {
-      return dbFromQuery;
+      return dbFromQuery.trim();
     }
     
     return 'NOT SPECIFIED (will use "test" by default)';
   } catch (err) {
     // Try regex extraction as fallback
-    const match = uri.match(/\/([^/?]+)(\?|$)/);
-    return match && match[1] ? match[1] : 'NOT SPECIFIED (will use "test" by default)';
+    const match = uri.match(/\/([^/?]+)\/?(\?|$)/);
+    return match && match[1] ? match[1].trim() : 'NOT SPECIFIED (will use "test" by default)';
   }
 }
 
