@@ -1,26 +1,19 @@
-﻿const path = require('path');
-const fs = require('fs');
-const express = require('express');
+﻿const express = require('express');
 const multer = require('multer');
 const resourceController = require('../controllers/resourceController');
 const {
   ensureAuthenticated,
 } = require('../middleware/authMiddleware');
 
-const uploadDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Use memory storage - files will be uploaded to Cloudinary directly from memory
+const storage = multer.memoryStorage();
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const safeName = file.originalname.replace(/\s+/g, '_');
-    cb(null, `${Date.now()}_${safeName}`);
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit for resource files
   },
 });
-
-const upload = multer({ storage });
 const uploadFields = upload.fields([
   { name: 'fileUpload', maxCount: 1 },
   { name: 'imageUpload', maxCount: 1 },

@@ -1,17 +1,21 @@
-﻿const fs = require('fs');
-const path = require('path');
-const domainModel = require('../models/domainModel');
+﻿const domainModel = require('../models/domainModel');
 const resourceModel = require('../models/resourceModel');
 const commentModel = require('../models/commentModel');
 const voteModel = require('../models/voteModel');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryUpload');
 
-function cleanupFile(filePath) {
-  if (!filePath) return;
-  const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
-  const fullPath = path.join(uploadsDir, filePath);
-  if (fs.existsSync(fullPath)) {
-    fs.unlinkSync(fullPath);
+/**
+ * Delete a file from Cloudinary
+ * @param {string} fileUrl - Cloudinary URL or local file path (for backward compatibility)
+ */
+async function cleanupFile(fileUrl) {
+  if (!fileUrl) return;
+  // If it's a Cloudinary URL, delete from Cloudinary
+  if (fileUrl.includes('cloudinary.com')) {
+    await deleteFromCloudinary(fileUrl, 'auto');
   }
+  // Otherwise, it might be an old local file path - we can ignore it
+  // (local files will be cleaned up manually if needed)
 }
 
 function getUploadedFiles(req) {
@@ -114,6 +118,34 @@ async function createResource(req, res) {
     return res.redirect('/resources/new');
   }
 
+  // Upload files to Cloudinary
+  let filePath = null;
+  let imagePath = null;
+
+  try {
+    if (fileUpload) {
+      const uploadResult = await uploadToCloudinary(
+        fileUpload.buffer,
+        'resources/files',
+        'auto'
+      );
+      filePath = uploadResult.url;
+    }
+
+    if (imageUpload) {
+      const uploadResult = await uploadToCloudinary(
+        imageUpload.buffer,
+        'resources/images',
+        'image'
+      );
+      imagePath = uploadResult.url;
+    }
+  } catch (error) {
+    console.error('Error uploading to Cloudinary:', error);
+    req.session.error = 'Failed to upload file. Please try again.';
+    return res.redirect('/resources/new');
+  }
+
   const status = determineStatus({
     isPublic: publicFlag,
     isAdmin,
@@ -127,8 +159,8 @@ async function createResource(req, res) {
     title: cleanTitle,
     description: cleanDescription || null,
     type: cleanType,
-    filePath: fileUpload ? fileUpload.filename : null,
-    imagePath: imageUpload ? imageUpload.filename : null,
+    filePath: filePath,
+    imagePath: imagePath,
     url: cleanType === 'LINK' ? cleanUrl : null,
     purpose: cleanPurpose,
     guideText: cleanGuide,
@@ -189,17 +221,45 @@ async function updateResourceHandler(req, res) {
     return res.redirect(`/resources/${req.params.id}/edit`);
   }
 
-  if (cleanType === 'FILE' && fileUpload) {
-    cleanupFile(resource.filePath || resource.file_path);
-    filePath = fileUpload.filename;
-  } else if (cleanType === 'LINK') {
-    cleanupFile(resource.filePath || resource.file_path);
-    filePath = null;
-  }
+  // Handle file uploads to Cloudinary
+  try {
+    if (cleanType === 'FILE' && fileUpload) {
+      // Delete old file from Cloudinary if it exists
+      if (resource.filePath || resource.file_path) {
+        await cleanupFile(resource.filePath || resource.file_path);
+      }
+      // Upload new file to Cloudinary
+      const uploadResult = await uploadToCloudinary(
+        fileUpload.buffer,
+        'resources/files',
+        'auto'
+      );
+      filePath = uploadResult.url;
+    } else if (cleanType === 'LINK') {
+      // Delete old file from Cloudinary if switching from FILE to LINK
+      if (resource.filePath || resource.file_path) {
+        await cleanupFile(resource.filePath || resource.file_path);
+      }
+      filePath = null;
+    }
 
-  if (imageUpload) {
-    cleanupFile(resource.imagePath || resource.image_path);
-    imagePath = imageUpload.filename;
+    if (imageUpload) {
+      // Delete old image from Cloudinary if it exists
+      if (resource.imagePath || resource.image_path) {
+        await cleanupFile(resource.imagePath || resource.image_path);
+      }
+      // Upload new image to Cloudinary
+      const uploadResult = await uploadToCloudinary(
+        imageUpload.buffer,
+        'resources/images',
+        'image'
+      );
+      imagePath = uploadResult.url;
+    }
+  } catch (error) {
+    console.error('Error uploading to Cloudinary:', error);
+    req.session.error = 'Failed to upload file. Please try again.';
+    return res.redirect(`/resources/${req.params.id}/edit`);
   }
 
   if (cleanType === 'LINK' && !cleanUrl) {
@@ -242,8 +302,10 @@ async function deleteResourceHandler(req, res) {
     return res.redirect('/resources');
   }
 
-  cleanupFile(resource.filePath || resource.file_path);
-  cleanupFile(resource.imagePath || resource.image_path);
+  // Delete files from Cloudinary
+  await cleanupFile(resource.filePath || resource.file_path);
+  await cleanupFile(resource.imagePath || resource.image_path);
+  
   await resourceModel.deleteResource(req.params.id, req.session.user.id);
   req.session.success = 'Resource deleted.';
   return res.redirect('/resources');

@@ -88,6 +88,7 @@ Then open <http://localhost:3000>.
 | Key | Description |
 | --- | --- |
 | `MONGODB_URI` | Required. MongoDB connection string. Defaults to `mongodb://127.0.0.1:27017/webhub_dev` for local development. For MongoDB Atlas, use your cluster connection string. |
+| `CLOUDINARY_URL` | Required. Cloudinary connection string for file storage. Format: `cloudinary://api_key:api_secret@cloud_name`. Alternatively, use `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. |
 | `SESSION_SECRET` | Required. Random string for express-session. Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `PORT` | Optional. Defaults to `3000`. |
 
@@ -108,11 +109,31 @@ Then open <http://localhost:3000>.
 5. Get your connection string and set it as `MONGODB_URI` in `.env`
    - Format: `mongodb+srv://username:password@cluster.mongodb.net/webhub?retryWrites=true&w=majority`
 
-Uploaded assets live in `/uploads`:
-- Resource files and images: `/uploads/`
-- User avatars: `/uploads/avatars/`
+### Cloudinary Setup (File Storage)
 
-Keep these folders writable when deploying.
+The app uses **Cloudinary** for storing uploaded files (resource files, images, and avatars) instead of local filesystem. This ensures files persist across deployments.
+
+#### Getting Your Cloudinary Credentials
+
+1. Create a free account at [Cloudinary](https://cloudinary.com/users/register/free)
+2. After signing up, go to your [Dashboard](https://console.cloudinary.com/)
+3. Copy your **Cloudinary URL** from the dashboard
+   - Format: `cloudinary://api_key:api_secret@cloud_name`
+4. Add it to your `.env` file as `CLOUDINARY_URL`
+
+**Alternative**: You can also use individual environment variables:
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+**Note**: The free tier includes 25GB storage and 25GB bandwidth per month, which is sufficient for most projects.
+
+**File Storage**: All uploaded files (resource files, images, and avatars) are stored on Cloudinary. Files are organized in folders:
+- Resource files: `resources/files/`
+- Resource images: `resources/images/`
+- User avatars: `avatars/`
+
+The MongoDB database stores Cloudinary URLs instead of local file paths, ensuring files persist across deployments.
 
 **Note**: Avatar files in `/uploads/avatars/` should be added to `.gitignore` if you're using git (they are user-generated content).
 
@@ -218,11 +239,12 @@ git push -u origin main
    - Start command: `npm start`
 5. Environment variables:
    - `MONGODB_URI` – Your MongoDB Atlas connection string (e.g., `mongodb+srv://username:password@cluster.mongodb.net/webhub?retryWrites=true&w=majority`)
+   - `CLOUDINARY_URL` – Your Cloudinary connection string (e.g., `cloudinary://api_key:api_secret@cloud_name`)
    - `SESSION_SECRET` – long random string (generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
    - `NODE_ENV` – `production`.
 6. Deploy. Render sets `PORT`, which the app already honors (`process.env.PORT || 3000`).
 
-**Note**: With MongoDB Atlas, you don't need persistent disk for the database. However, uploaded files in `/uploads` will still be lost on free plan unless you use external storage (e.g., Cloudinary, S3).
+**Note**: With MongoDB Atlas and Cloudinary, you don't need persistent disk. All data (database and files) is stored in the cloud and persists across deployments.
 
 ### Production Deployment
 

@@ -23,17 +23,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configure uploads directory (use persistent disk path if set)
-const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
-const avatarsDir = path.join(uploadsDir, 'avatars');
-const fs = require('fs');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-if (!fs.existsSync(avatarsDir)) {
-  fs.mkdirSync(avatarsDir, { recursive: true });
-}
-app.use('/uploads', express.static(uploadsDir));
+// Note: File uploads are now handled by Cloudinary, so we don't need to serve local uploads
+// The /uploads route is kept for backward compatibility with old local file paths
+// but new uploads will be Cloudinary URLs
 
 app.use(
   session({

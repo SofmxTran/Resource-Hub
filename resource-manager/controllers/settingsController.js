@@ -1,6 +1,5 @@
-const fs = require('fs');
-const path = require('path');
 const userModel = require('../models/userModel');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryUpload');
 
 async function renderProfileSettings(req, res) {
   const user = await userModel.findById(req.session.user.id);
@@ -33,7 +32,7 @@ async function updateProfileSettings(req, res) {
   
   let avatarPath = null;
   
-  // Handle avatar upload
+  // Handle avatar upload to Cloudinary
   if (req.file) {
     const avatarFile = req.file;
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -49,23 +48,28 @@ async function updateProfileSettings(req, res) {
       return res.redirect('/settings/profile');
     }
     
-    // Get current user to check for existing avatar
-    const currentUser = await userModel.findById(userId);
-    if (currentUser && currentUser.avatar_path) {
-      // Remove old avatar file
-      const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
-      const oldAvatarPath = path.join(uploadsDir, 'avatars', currentUser.avatar_path);
-      if (fs.existsSync(oldAvatarPath)) {
-        try {
-          fs.unlinkSync(oldAvatarPath);
-        } catch (err) {
-          console.error('Error removing old avatar:', err);
+    try {
+      // Get current user to check for existing avatar
+      const currentUser = await userModel.findById(userId);
+      if (currentUser && currentUser.avatar_path) {
+        // Delete old avatar from Cloudinary if it's a Cloudinary URL
+        if (currentUser.avatar_path.includes('cloudinary.com')) {
+          await deleteFromCloudinary(currentUser.avatar_path, 'image');
         }
       }
+      
+      // Upload new avatar to Cloudinary
+      const uploadResult = await uploadToCloudinary(
+        avatarFile.buffer,
+        'avatars',
+        'image'
+      );
+      avatarPath = uploadResult.url;
+    } catch (error) {
+      console.error('Error uploading avatar to Cloudinary:', error);
+      req.session.error = 'Failed to upload avatar. Please try again.';
+      return res.redirect('/settings/profile');
     }
-    
-    // Save new avatar
-    avatarPath = avatarFile.filename;
   }
   
   // Update profile
