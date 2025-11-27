@@ -5,10 +5,10 @@
     <div class="col-lg-8">
       <div class="card" data-aos="zoom-in">
         <div class="card-body p-4">
-          <div class="text-center mb-4">
+            <div class="text-center mb-4">
             <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
             <h4 class="mb-2">Add New Resource</h4>
-            <p class="text-muted small">Share files, links, and study guides with the community</p>
+            <p class="text-muted small">Share files, links, posts, and study guides with the community</p>
           </div>
           <%- include('../partials/messages') %>
           <form action="/resources" method="POST" enctype="multipart/form-data">
@@ -78,6 +78,7 @@
                 >
                   <option value="FILE">File</option>
                   <option value="LINK">Link</option>
+                  <option value="POST">Post / Article</option>
                 </select>
               </div>
               <div class="col-md-6 file-field">
@@ -92,6 +93,22 @@
                 <i class="fas fa-link me-2"></i>URL
               </label>
               <input type="url" class="form-control" name="url" placeholder="https://example.com" />
+            </div>
+            <div class="mt-3 post-field d-none">
+              <label class="form-label">
+                <i class="fas fa-edit me-2"></i>Content <span class="text-danger">*</span>
+              </label>
+              <textarea
+                name="content"
+                class="form-control"
+                id="postContent"
+                rows="12"
+                placeholder="Write your post/article content here. You can use basic HTML formatting."
+                required
+              ></textarea>
+              <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>You can use basic HTML tags like &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a&gt;, &lt;img&gt;, etc.
+              </small>
             </div>
             <div class="mt-3">
               <label class="form-label">
@@ -130,11 +147,28 @@
     const typeSelect = document.getElementById('resourceType');
     const fileField = document.querySelector('.file-field');
     const linkField = document.querySelector('.link-field');
+    const postField = document.querySelector('.post-field');
+    const postContent = document.getElementById('postContent');
+    
     const toggleFields = () => {
-      const isFile = typeSelect.value === 'FILE';
+      const type = typeSelect.value;
+      const isFile = type === 'FILE';
+      const isLink = type === 'LINK';
+      const isPost = type === 'POST';
+      
       fileField.classList.toggle('d-none', !isFile);
-      linkField.classList.toggle('d-none', isFile);
+      linkField.classList.toggle('d-none', !isLink);
+      postField.classList.toggle('d-none', !isPost);
+      
+      // Make content required only for POST type
+      if (postContent) {
+        postContent.required = isPost;
+        if (!isPost) {
+          postContent.value = '';
+        }
+      }
     };
+    
     if (typeSelect) {
       typeSelect.addEventListener('change', toggleFields);
       toggleFields();

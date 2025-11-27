@@ -15,8 +15,8 @@
         <% } %>
         <div class="card-body">
           <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-            <span class="badge <%= resource.type === 'FILE' ? 'bg-info' : 'bg-success' %>">
-              <i class="fas fa-<%= resource.type === 'FILE' ? 'file' : 'link' %> me-1"></i><%= resource.type %>
+            <span class="badge <%= resource.type === 'FILE' ? 'bg-info' : resource.type === 'POST' ? 'bg-warning text-dark' : 'bg-success' %>">
+              <i class="fas fa-<%= resource.type === 'FILE' ? 'file' : resource.type === 'POST' ? 'file-alt' : 'link' %> me-1"></i><%= resource.type %>
             </span>
             <span class="badge <%= resource.is_public ? 'bg-success' : 'bg-secondary' %>">
               <i class="fas fa-<%= resource.is_public ? 'globe' : 'lock' %> me-1"></i><%= resource.is_public ? 'Public' : 'Private' %>
@@ -45,6 +45,13 @@
             </div>
           </div>
           <p class="mb-3"><%= resource.description || 'No description provided.' %></p>
+          <% if (resource.type === 'POST' && resource.content) { %>
+          <div class="mb-4">
+            <div class="post-content" style="line-height: 1.8; font-size: 1.05rem;">
+              <%- resource.content %>
+            </div>
+          </div>
+          <% } %>
           <div class="small text-muted mb-4">
             <div class="mb-2">
               <i class="fas fa-tag me-1 text-primary"></i><strong>Domain:</strong> <%= resource.domain_name || 'Uncategorized' %>
@@ -76,6 +83,11 @@
             <a class="btn btn-primary" href="<%= resource.url %>" target="_blank">
               <i class="fas fa-external-link-alt me-1"></i>Open Link
             </a>
+            <% } %>
+            <% if (resource.type === 'POST') { %>
+            <span class="text-muted">
+              <i class="fas fa-file-alt me-1"></i>Post / Article
+            </span>
             <% } %>
             <% if (currentUser) { %>
             <form action="/resources/<%= resource.id %>/vote" method="POST" class="mb-0">

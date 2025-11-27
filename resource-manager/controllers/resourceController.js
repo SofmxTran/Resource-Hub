@@ -61,7 +61,7 @@ async function listResources(req, res) {
       status: req.query.status || 'ALL',
       q: req.query.q || '',
     };
-    if (!['FILE', 'LINK'].includes(filters.type)) {
+    if (!['FILE', 'LINK', 'POST'].includes(filters.type)) {
       filters.type = 'all';
     }
     // Normalize status: 'ALL' means show all, otherwise must be valid status
@@ -114,14 +114,15 @@ async function renderNewResource(req, res) {
 }
 
 async function createResource(req, res) {
-  const { title, description, domainId, type, url, purpose, guideText, isPublic } =
+  const { title, description, domainId, type, url, purpose, guideText, content, isPublic } =
     req.body;
   const { fileUpload, imageUpload } = getUploadedFiles(req);
   const cleanTitle = (title || '').trim();
   const cleanDescription = (description || '').trim();
   const cleanPurpose = (purpose || '').trim() || null;
   const cleanGuide = (guideText || '').trim() || null;
-  const cleanType = type === 'FILE' ? 'FILE' : 'LINK';
+  const cleanContent = (content || '').trim() || null;
+  const cleanType = type === 'FILE' ? 'FILE' : type === 'POST' ? 'POST' : 'LINK';
   const cleanUrl = (url || '').trim();
   const publicFlag = isPublic === 'on';
   const isAdmin = req.session.user.isAdmin;
@@ -138,6 +139,11 @@ async function createResource(req, res) {
 
   if (cleanType === 'LINK' && !cleanUrl) {
     req.session.error = 'Please provide a URL.';
+    return res.redirect('/resources/new');
+  }
+
+  if (cleanType === 'POST' && !cleanContent) {
+    req.session.error = 'Please provide content for your post.';
     return res.redirect('/resources/new');
   }
 
@@ -200,6 +206,7 @@ async function createResource(req, res) {
     url: cleanType === 'LINK' ? cleanUrl : null,
     purpose: cleanPurpose,
     guideText: cleanGuide,
+    content: cleanType === 'POST' ? cleanContent : null,
     isPublic: publicFlag,
     status,
   });
@@ -229,7 +236,7 @@ async function renderEditResource(req, res) {
 }
 
 async function updateResourceHandler(req, res) {
-  const { title, description, domainId, type, url, purpose, guideText, isPublic } =
+  const { title, description, domainId, type, url, purpose, guideText, content, isPublic } =
     req.body;
   const resource = await resourceModel.getResourceById(
     req.params.id,
@@ -244,10 +251,11 @@ async function updateResourceHandler(req, res) {
   const cleanDescription = (description || '').trim();
   const cleanPurpose = (purpose || '').trim() || null;
   const cleanGuide = (guideText || '').trim() || null;
+  const cleanContent = (content || '').trim() || null;
   const { fileUpload, imageUpload } = getUploadedFiles(req);
   let filePath = resource.filePath || resource.file_path;
   let imagePath = resource.imagePath || resource.image_path;
-  const cleanType = type === 'FILE' ? 'FILE' : 'LINK';
+  const cleanType = type === 'FILE' ? 'FILE' : type === 'POST' ? 'POST' : 'LINK';
   const cleanUrl = (url || '').trim();
   const publicFlag = isPublic === 'on';
   const isAdmin = req.session.user.isAdmin;
@@ -271,8 +279,8 @@ async function updateResourceHandler(req, res) {
         'auto'
       );
       filePath = uploadResult.url;
-    } else if (cleanType === 'LINK') {
-      // Delete old file from Cloudinary if switching from FILE to LINK
+    } else if (cleanType === 'LINK' || cleanType === 'POST') {
+      // Delete old file from Cloudinary if switching from FILE to LINK/POST
       if (resource.filePath || resource.file_path) {
         await cleanupFile(resource.filePath || resource.file_path);
       }
@@ -308,6 +316,11 @@ async function updateResourceHandler(req, res) {
     return res.redirect(`/resources/${req.params.id}/edit`);
   }
 
+  if (cleanType === 'POST' && !cleanContent) {
+    req.session.error = 'Please provide content for your post.';
+    return res.redirect(`/resources/${req.params.id}/edit`);
+  }
+
   const status = determineStatus({
     isPublic: publicFlag,
     isAdmin,
@@ -325,6 +338,7 @@ async function updateResourceHandler(req, res) {
     url: cleanType === 'LINK' ? cleanUrl : null,
     purpose: cleanPurpose,
     guideText: cleanGuide,
+    content: cleanType === 'POST' ? cleanContent : null,
     isPublic: publicFlag,
     status,
   });

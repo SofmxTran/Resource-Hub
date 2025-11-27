@@ -175,6 +175,7 @@ async function getAllResources(userId, filters = {}) {
         file_path: r.filePath || r.file_path || null,
         image_path: r.imagePath || r.image_path || null,
         url: r.url || null,
+        content: r.content || null,
         title: r.title || '',
         description: r.description || '',
         type: r.type || '',
@@ -207,6 +208,7 @@ async function getResourceById(id, userId) {
   return {
     ...resource,
     id: resource._id.toString(),
+    content: resource.content || null,
     trust_score: trustScore,
   };
 }
@@ -229,6 +231,7 @@ async function getResourceForDetail(id) {
     display_name: resource.userId?.displayName || null,
     avatar_path: resource.userId?.avatarPath || null,
     owner_id: resource.userId?._id?.toString() || null,
+    content: resource.content || null,
     trust_score: trustScore,
   };
 }
@@ -244,6 +247,7 @@ async function createResource({
   url,
   purpose,
   guideText,
+  content,
   isPublic,
   status = 'PENDING',
 }) {
@@ -258,6 +262,7 @@ async function createResource({
     url: url || null,
     purpose: purpose || null,
     guideText: guideText || null,
+    content: content || null,
     isPublic: isPublic !== false,
     status,
   });
@@ -275,6 +280,7 @@ async function updateResource(id, userId, {
   url,
   purpose,
   guideText,
+  content,
   isPublic,
   status,
 }) {
@@ -288,6 +294,7 @@ async function updateResource(id, userId, {
     url: url || null,
     purpose: purpose || null,
     guideText: guideText || null,
+    content: content || null,
     isPublic: isPublic !== false,
     status,
   };

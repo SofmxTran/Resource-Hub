@@ -23,7 +23,7 @@ const resourceSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['FILE', 'LINK'],
+    enum: ['FILE', 'LINK', 'POST'],
   },
   filePath: {
     type: String,
@@ -56,6 +56,10 @@ const resourceSchema = new mongoose.Schema({
     default: null,
   },
   guideText: {
+    type: String,
+    default: null,
+  },
+  content: {
     type: String,
     default: null,
   },

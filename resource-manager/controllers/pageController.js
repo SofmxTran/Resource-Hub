@@ -3,7 +3,7 @@ const domainModel = require('../models/domainModel');
 
 function buildFeedFilters(query = {}) {
   const typeRaw = (query.type || '').toUpperCase();
-  const allowedTypes = ['FILE', 'LINK'];
+  const allowedTypes = ['FILE', 'LINK', 'POST'];
   const type = allowedTypes.includes(typeRaw) ? typeRaw : 'all';
 
   const purposeRaw = (query.purpose || '').trim();

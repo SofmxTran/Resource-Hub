@@ -27,13 +27,16 @@
           <label class="form-label">Type</label>
           <select class="form-select" name="type">
             <option value="all" <%= filters.type === 'all' ? 'selected' : '' %>>
-              Both
+              All Types
             </option>
             <option value="FILE" <%= filters.type === 'FILE' ? 'selected' : '' %>>
               File
             </option>
             <option value="LINK" <%= filters.type === 'LINK' ? 'selected' : '' %>>
               Link
+            </option>
+            <option value="POST" <%= filters.type === 'POST' ? 'selected' : '' %>>
+              Post / Article
             </option>
           </select>
         </div>
@@ -127,7 +130,7 @@
               <td><%= res.domain_name || 'Uncategorized' %></td>
               <td><%= res.purpose || '-' %></td>
               <td>
-                <span class="badge <%= res.type === 'FILE' ? 'bg-info text-dark' : 'bg-success' %>">
+                <span class="badge <%= res.type === 'FILE' ? 'bg-info text-dark' : res.type === 'POST' ? 'bg-warning text-dark' : 'bg-success' %>">
                   <%= res.type || 'LINK' %>
                 </span>
               </td>
@@ -158,6 +161,9 @@
                   target="_blank"
                   title="Visit"
                 >Visit</a>
+                <% } %>
+                <% if (res.type === 'POST') { %>
+                <span class="badge bg-warning text-dark me-1">Post</span>
                 <% } %>
                 <a class="btn btn-sm btn-outline-dark me-1" href="/resources/<%= res.id || res._id %>" title="View">View</a>
                 <a class="btn btn-sm btn-outline-primary me-1" href="/resources/<%= res.id || res._id %>/edit" title="Edit">Edit</a>
